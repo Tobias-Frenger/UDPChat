@@ -15,7 +15,7 @@ public class Client implements ActionListener {
 			System.err.println("Usage: java Client serverhostname serverportnumber username");
 			System.exit(-1);
 		}
-
+ 
 		try {
 			Client instance = new Client(args[2]);
 			instance.connectToServer(args[0], Integer.parseInt(args[1]));
