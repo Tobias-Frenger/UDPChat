@@ -28,7 +28,7 @@ public class ChatGUI extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	private final JTextField m_chatInput;
 	private final JTextArea m_chatOutput;
-
+ 
 	public ChatGUI(ActionListener listener, String userName) {
 		setSize(700, 500);
 		setTitle("Chat client for " + userName);
@@ -41,7 +41,12 @@ public class ChatGUI extends JFrame implements ActionListener {
 		m_chatOutput.setEditable(false);
 		m_chatOutput.setBackground(Color.BLACK);
 		m_chatOutput.setForeground(Color.GREEN);
-		m_chatOutput.setText("Welcome To the Amazing 1337 Chat room!\n");
+		m_chatOutput.setText("Welcome To the Amazing 1337 Chat room!\n"
+				+ "Possible commands:\n"
+				+ "/list - list all connected users\n"
+				+ "/tell - whisper to individual\n"
+				+ "/leave - disconnect and leave the conversation\n"
+				+ "/connect - reconnect and join the conversation\n\n");
 
 		Container pane = getContentPane();
 		pane.add(m_chatOutput, BorderLayout.NORTH);

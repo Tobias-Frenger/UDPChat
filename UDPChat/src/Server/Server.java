@@ -71,38 +71,59 @@ public class Server {
 					c = itr.next();
 					c.sendMessage(mes[0] + " connected to the server", m_socket);
 				}
-			} else if (message.contains("/list")) { // PRINT LIST OF USERS (TO SELF)
-				sendPrivateMessage("---Chat room users---", clientName);
-				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
-					c = itr.next();
-					sendPrivateMessage("        - " + c.getName(), clientName);
-				}
-				sendPrivateMessage("-----------------------------", clientName);
-			} else if (message.contains("/tell ")) { // SEND PRIVATE MESSAGE
-				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
-					c = itr.next();
-					if (message.contains("/tell " + c.getName())) {
-						// RECIPENT MESSAGE
-						message = message.replace("/tell " + c.getName(), "");
-						message = message.replace("->", " whispers ->");
-						sendPrivateMessage(message, c.getName());
-						// SENDER MESSAGE
-						message = message.replace(clientName, "You");
-						message = message.replace("whispers", "whisper to " + c.getName());
-						sendPrivateMessage(message, clientName);
-					}
-				}
-			} else if (message.contains("/leave")) {
-				message = message.replaceAll("/leave", "");
-				broadcast(clientName + " disconnected");
-				message = message.replace(clientName + " -> ", "");
-				if (!message.isEmpty()) {
-					broadcast(clientName + " final note: " + message);
-				}
-			} else { // PRINT MESSAGE
-				broadcast(message);
 			}
+			
+			if (message.contains("/connect") && !checkIfConnected(clientName)) {
+				addClient(clientName, dp.getAddress(), dp.getPort());
+				message = message.replace(message, clientName + " has reconnected");
+			}
+			
+			if (checkIfConnected(clientName)) {
+				if (message.contains("/list")) { // PRINT LIST OF USERS (TO SELF)
+					sendPrivateMessage("---Chat room users---", clientName);
+					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+						c = itr.next();
+						sendPrivateMessage("        - " + c.getName(), clientName);
+					}
+					sendPrivateMessage("-----------------------------", clientName);
+				} else if (message.contains("/tell ")) { // SEND PRIVATE MESSAGE
+					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+						c = itr.next();
+						if (message.contains("/tell " + c.getName())) {
+							// RECIPENT MESSAGE
+							message = message.replace("/tell " + c.getName(), "");
+							message = message.replace("->", " whispers ->");
+							sendPrivateMessage(message, c.getName());
+							// SENDER MESSAGE
+							message = message.replace(clientName, "You");
+							message = message.replace("whispers", "whisper to " + c.getName());
+							sendPrivateMessage(message, clientName);
+						}
+					}
+				} else if (message.contains("/leave")) {
+					message = message.replaceAll("/leave", "");
+					message = message.replace(clientName + " -> ", "");
+					if (!message.isEmpty()) {
+						broadcast(clientName + " final note: " + message);
+					}
+					disconnectClient(clientName);
+				} 
+				else { // PRINT MESSAGE
+						broadcast(message);
+				}
+			} 
 		} while (true);
+	}
+
+	private boolean checkIfConnected(String name) {
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			c = itr.next();
+			if (c.hasName(name)) {
+				return true; // client is connected
+			}
+		}
+		return false;
 	}
 
 	public boolean addClient(String name, InetAddress address, int port) {
@@ -116,6 +137,22 @@ public class Server {
 		m_connectedClients.add(new ClientConnection(name, address, port));
 		System.out.println("Client added");
 		return true;
+	}
+
+	public boolean disconnectClient(String name) throws IOException {
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			c = itr.next();
+			System.out.println(c.getName());
+			if (c.hasName(name)) {
+				m_connectedClients.remove(c);
+				System.out.println("Client disconnected");
+				broadcast(name + " disconnected");
+				return true;
+			}
+		}
+		System.out.println("Client " + name + " not found\n" + "Unable to disconnect");
+		return false;
 	}
 
 	public void sendPrivateMessage(String message, String name) throws IOException {
