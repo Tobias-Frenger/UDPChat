@@ -88,7 +88,7 @@ public class Server {
 						sendPrivateMessage(message, c.getName());
 						// SENDER MESSAGE
 						message = message.replace(clientName, "You");
-						message = message.replace("whispers", "whisper " + c.getName());
+						message = message.replace("whispers", "whisper to " + c.getName());
 						sendPrivateMessage(message, clientName);
 					}
 				}
