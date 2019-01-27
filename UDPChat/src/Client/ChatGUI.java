@@ -36,7 +36,7 @@ public class ChatGUI extends JFrame implements ActionListener {
 		m_chatOutput = new JTextArea(10, 15);
 		m_chatInput = new JTextField(20);
 
-		m_chatOutput.setWrapStyleWord(true);
+		m_chatOutput.setWrapStyleWord(true); 
 		m_chatOutput.setLineWrap(true);
 		m_chatOutput.setEditable(false);
 		m_chatOutput.setBackground(Color.BLACK);

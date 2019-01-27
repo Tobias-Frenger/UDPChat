@@ -29,7 +29,7 @@ public class Client implements ActionListener {
 		m_name = userName;
 		// Start up GUI (runs in its own thread)
 		m_GUI = new ChatGUI(this, m_name);
-	}
+	} 
 
 	private void connectToServer(String hostName, int port) throws IOException {
 		// Create a new server connection
