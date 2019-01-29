@@ -150,7 +150,7 @@ public class Server {
 		System.out.println("Client added");
 		return true;
 	}
-
+ 
 	public boolean disconnectClient(String name) throws IOException {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {

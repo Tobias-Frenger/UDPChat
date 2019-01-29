@@ -12,7 +12,7 @@ import java.util.Random;
 
 /**
  * 
- * @author brom
+ * @author brom 
  */
 public class ClientConnection {
 
