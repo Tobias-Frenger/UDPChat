@@ -29,7 +29,6 @@ public class ClientConnection {
 	}
 
 	public void sendMessage(String message, DatagramSocket socket) throws IOException {
-
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 		System.out.println(message);
@@ -37,9 +36,7 @@ public class ClientConnection {
 			// TODO: send a message to this client using socket.
 			DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length, m_address,
 					m_port);
-
 			socket.send(packet);
-
 		} else {
 			// Message got lost
 			System.out.println("Message lost in the void - CC");

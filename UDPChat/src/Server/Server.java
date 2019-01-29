@@ -52,41 +52,48 @@ public class Server {
 			// response message to client detailing whether it was successful
 			// - Broadcast the message to all connected users using broadcast()
 			// - Send a private message to a user using sendPrivateMessage()
-			byte[] bytis = new byte[1024];
-			DatagramPacket dp = new DatagramPacket(bytis, bytis.length);
+			
+			//Retrieve message from client
+			byte[] messageByte = new byte[1024];
+			DatagramPacket dp = new DatagramPacket(messageByte, messageByte.length);
 			m_socket.receive(dp);
+			// Unmarshall message
 			String message = new String(dp.getData(), 0, dp.getLength());
+			
+			
 			ClientConnection c;
-
+			
+			// Retrieve the client name and put inside local string
 			String[] tempy = message.split("-name%");
 			String clientName = tempy[0];
 			message = message.replace("-name%", " -> ");
-
-			if (message.contains("-connection%")) { // CONNECTED TO SERVER
-
+			
+			// CONNECTED TO SERVER
+			if (message.contains("-connection%")) { 
 				String[] mes = message.split("-connection%");
 				addClient(mes[0], dp.getAddress(), dp.getPort());
-
 				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 					c = itr.next();
 					c.sendMessage(mes[0] + " connected to the server", m_socket);
 				}
 			}
-			
 			if (message.contains("/connect") && !checkIfConnected(clientName)) {
 				addClient(clientName, dp.getAddress(), dp.getPort());
 				message = message.replace(message, clientName + " has reconnected");
 			}
-			
+			// Check if sender off message is a connected client
 			if (checkIfConnected(clientName)) {
-				if (message.contains("/list")) { // PRINT LIST OF USERS (TO SELF)
+				// PRINT LIST OF USERS TO SELF
+				if (message.contains("/list")) { 
 					sendPrivateMessage("---Chat room users---", clientName);
 					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 						c = itr.next();
 						sendPrivateMessage("        - " + c.getName(), clientName);
 					}
 					sendPrivateMessage("-----------------------------", clientName);
-				} else if (message.contains("/tell ")) { // SEND PRIVATE MESSAGE
+				} 
+				// SEND PRIVATE MESSAGE TO CLIENT
+				else if (message.contains("/tell ")) { 
 					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 						c = itr.next();
 						if (message.contains("/tell " + c.getName())) {
@@ -100,21 +107,26 @@ public class Server {
 							sendPrivateMessage(message, clientName);
 						}
 					}
-				} else if (message.contains("/leave")) {
+				} 
+				// USER LEAVE CHAT
+				else if (message.contains("/leave")) {
 					message = message.replaceAll("/leave", "");
 					message = message.replace(clientName + " -> ", "");
 					if (!message.isEmpty()) {
 						broadcast(clientName + " final note: " + message);
 					}
 					disconnectClient(clientName);
+					m_socket.disconnect();
 				} 
-				else { // PRINT MESSAGE
-						broadcast(message);
+				// PRINT MESSAGE
+				else { 
+					broadcast(message);
 				}
-			} 
+			}
 		} while (true);
 	}
-
+	
+	// Method to for the server to check if the sender is a connected client or not
 	private boolean checkIfConnected(String name) {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
@@ -123,7 +135,7 @@ public class Server {
 				return true; // client is connected
 			}
 		}
-		return false;
+		return false; // client was not connected
 	}
 
 	public boolean addClient(String name, InetAddress address, int port) {
@@ -140,14 +152,13 @@ public class Server {
 	}
 
 	public boolean disconnectClient(String name) throws IOException {
-		ClientConnection c; 
+		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			System.out.println(c.getName());
 			if (c.hasName(name)) {
-				m_connectedClients.remove(c);
-				System.out.println("Client disconnected");
 				broadcast(name + " disconnected");
+				m_connectedClients.remove(c);
 				return true;
 			}
 		}
