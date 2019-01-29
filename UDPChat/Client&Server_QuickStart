@@ -4,3 +4,5 @@ Name file: Server
 Create new shortcut
 setTarget: C:\Windows\System32\cmd.exe /k cd C:\Users\Tfren\git\UDPChat_Distr_sys_1\UDPChat\bin & java Client.Client 192.168.56.1 25001 Client_01
 Name file: Client_01
+
+OBS! Remember to change to the correct ip
