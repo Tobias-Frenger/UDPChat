@@ -15,7 +15,6 @@ public class Client implements ActionListener {
 			System.err.println("Usage: java Client serverhostname serverportnumber username");
 			System.exit(-1);
 		}
- 
 		try {
 			Client instance = new Client(args[2]);
 			instance.connectToServer(args[0], Integer.parseInt(args[1]));
@@ -30,10 +29,14 @@ public class Client implements ActionListener {
 		// Start up GUI (runs in its own thread)
 		m_GUI = new ChatGUI(this, m_name);
 	} 
+	
+	public String getName() {
+		return m_name;
+	}
 
 	private void connectToServer(String hostName, int port) throws IOException {
 		// Create a new server connection
-		m_connection = new ServerConnection(hostName, port);
+		m_connection = new ServerConnection(hostName, port, this);
 
 		if (m_connection.handshake(m_name + "-connection%")) {
 			listenForServerMessages();

@@ -1,41 +1,40 @@
 package Server;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.util.Iterator;
+
+/*
+ * This is an implementation of the heartbeat
+ * algorithm which is used by the server in order
+ * let the client know that the server is up
+ * and running
+ * 
+ * @author a16tobfr
+ */
 
 public class HeartBeat extends Thread{
-	private DatagramSocket socket;
-	private InetAddress iadr;
-	private int port;
+	private int sleepTimeInMs = 10000;
+	private Server server;
 	
-	public HeartBeat(DatagramSocket socket, InetAddress iadr, int port) {
-		this.socket = socket;
-		this.iadr = iadr;
-		this.port = port;
+	public HeartBeat(Server server) {
+		this.server = server;
 	}
 	
-	private DatagramPacket heartbeatMessage;
-	private int heartBeatIntervallInMs = 10000;
-	
 	public void run() {
-		byte[] b = new byte[256];
-		heartbeatMessage = new DatagramPacket(b, b.length, iadr, port);
-		
-		while(true) {
+		String message = "-Salive%";
+		while (true) {
 			try {
-				socket.send(heartbeatMessage);
-				sleep(heartBeatIntervallInMs);
+				ClientConnection c = null;
+				for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
+					c = itr.next();
+					server.messages().sendPrivateMessage(message, c.getName());
+				}
+				sleep(sleepTimeInMs);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
-	
-	
 }

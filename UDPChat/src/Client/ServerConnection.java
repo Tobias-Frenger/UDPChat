@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package Client; 
+package Client;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -24,59 +24,81 @@ public class ServerConnection {
 	private DatagramSocket m_socket = null;
 	private InetAddress m_serverAddress = null;
 	private int m_serverPort = -1;
+	private HeartBeat heartBeat;
+	private Client client;
 
-	public ServerConnection(String hostName, int port) throws SocketException {
+	public ServerConnection(String hostName, int port, Client client) throws SocketException {
 		m_serverPort = port;
-		// TODO:
-		// DONE * get address of host based on parameters and assign it to
-		// m_serverAddress
+		this.client = client;
 		try {
 			m_serverAddress = InetAddress.getByName(hostName);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		// DONE * set up socket and assign it to m_socket
 		m_socket = new DatagramSocket();
+		heartBeat = new HeartBeat(this,client.getName());
+		System.out.println(hostName);
+		heartBeat.start();
+//		heartBeat(hostName);
 	}
 
 	public boolean handshake(String name) throws IOException {
-		// TODO:
-		// * marshal connection message containing user name
-		// * send message via socket
 		sendChatMessage(name);
-		// * receive response message from server
-		// * unmarshal response message to determine whether connection was successful
 		receiveChatMessage();
 		// * return false if connection failed (e.g., if user name was taken)
 		return true;
 	}
 
 	public String receiveChatMessage() throws IOException {
-		// TODO:
-		// * receive message from server
-		// * unmarshal message if necessary
-		// Note that the main thread can block on receive here without
-		// problems, since the GUI runs in a separate thread
-		// Update to return message contents
 		// Receiving message:
 		byte[] buf = new byte[1024];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		m_socket.receive(packet);
 		// unMarshalling message:
 		String message = new String(packet.getData(), 0, packet.getLength());
+		if (message.contains("-Salive%")) {
+			System.out.println("sAlive");
+		}
 		return message;
 	}
 	
-	private DatagramPacket getDatagramPacket() {
-		byte[] b = new byte[1024];
-		DatagramPacket dp = new DatagramPacket(b, b.length);
-		return dp;
+	public int getPort() {
+		return m_serverPort;
 	}
+	
+	public InetAddress getAddress() {
+		return m_serverAddress;
+	}
+	
+	public DatagramSocket getSocket() {
+		return m_socket;
+	}
+	
+//	private void heartBeat(String name) {
+//		Thread heartBeat = new Thread() {
+//			String message = name + "-Calive%";
+//			int sleepTimeInMs = 10000;
+//			public void run() {
+//				while (true) {
+//					try {
+//						DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length, m_serverAddress, m_serverPort);
+//						m_socket.send(packet);
+//						sleep(sleepTimeInMs);
+//					} catch (InterruptedException e) {
+//						e.printStackTrace();
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//					}
+//				}
+//			}
+//
+//		};
+//		heartBeat.start();
+//	}
 
 	public void sendChatMessage(String message) throws IOException {
 		Random generator = new Random();
 		double failure = generator.nextDouble();
-		boolean ackReceived = false;
 
 		if (failure > TRANSMISSION_FAILURE_RATE) {
 			// TODO:
@@ -84,7 +106,7 @@ public class ServerConnection {
 			DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length, m_serverAddress,
 					m_serverPort);
 			// * send a chat message to the server
-				m_socket.send(packet);
+			m_socket.send(packet);
 		} else {
 			System.out.println("Message lost in the void - SC");
 			// Message got lost
