@@ -21,7 +21,7 @@ public class ClientConnection {
 	private final String m_name;
 	private final InetAddress m_address;
 	private final int m_port; 
-
+	
 	public ClientConnection(String name, InetAddress address, int port) {
 		m_name = name;
 		m_address = address;

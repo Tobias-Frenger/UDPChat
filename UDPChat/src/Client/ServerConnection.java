@@ -27,7 +27,6 @@ public class ServerConnection {
 
 	public ServerConnection(String hostName, int port) throws SocketException {
 		m_serverPort = port;
-
 		// TODO:
 		// DONE * get address of host based on parameters and assign it to
 		// m_serverAddress
@@ -67,18 +66,25 @@ public class ServerConnection {
 		String message = new String(packet.getData(), 0, packet.getLength());
 		return message;
 	}
+	
+	private DatagramPacket getDatagramPacket() {
+		byte[] b = new byte[1024];
+		DatagramPacket dp = new DatagramPacket(b, b.length);
+		return dp;
+	}
 
 	public void sendChatMessage(String message) throws IOException {
 		Random generator = new Random();
 		double failure = generator.nextDouble();
+		boolean ackReceived = false;
 
 		if (failure > TRANSMISSION_FAILURE_RATE) {
 			// TODO:
+			// * marshal message if necessary
 			DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length, m_serverAddress,
 					m_serverPort);
-			// * marshal message if necessary
-			m_socket.send(packet);
 			// * send a chat message to the server
+				m_socket.send(packet);
 		} else {
 			System.out.println("Message lost in the void - SC");
 			// Message got lost

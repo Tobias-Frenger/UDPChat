@@ -46,7 +46,7 @@ public class ChatGUI extends JFrame implements ActionListener {
 				+ "/list - list all connected users\n"
 				+ "/tell - whisper to individual\n"
 				+ "/leave - disconnect and leave the conversation\n"
-				+ "/connect - reconnect and join the conversation\n\n");
+				+ "/join - reconnect and join the conversation\n\n");
 
 		Container pane = getContentPane();
 		pane.add(m_chatOutput, BorderLayout.NORTH);
