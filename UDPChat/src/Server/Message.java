@@ -6,7 +6,8 @@ import java.util.Iterator;
 
 /*
  * This class handles all the messages 
- * that are being sent to the client
+ * that are being sent to the client 
+ * from the server 
  * 
  * @author a16tobfr
  */

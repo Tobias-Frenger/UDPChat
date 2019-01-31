@@ -24,22 +24,16 @@ public class ServerConnection {
 	private DatagramSocket m_socket = null;
 	private InetAddress m_serverAddress = null;
 	private int m_serverPort = -1;
-	private HeartBeat heartBeat;
-	private Client client;
+//	private HeartBeat heartBeat;
 
-	public ServerConnection(String hostName, int port, Client client) throws SocketException {
+	public ServerConnection(String hostName, int port) throws SocketException {
 		m_serverPort = port;
-		this.client = client;
 		try {
 			m_serverAddress = InetAddress.getByName(hostName);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
 		m_socket = new DatagramSocket();
-		heartBeat = new HeartBeat(this,client.getName());
-		System.out.println(hostName);
-		heartBeat.start();
-//		heartBeat(hostName);
 	}
 
 	public boolean handshake(String name) throws IOException {
@@ -57,44 +51,22 @@ public class ServerConnection {
 		// unMarshalling message:
 		String message = new String(packet.getData(), 0, packet.getLength());
 		if (message.contains("-Salive%")) {
-			System.out.println("sAlive");
+			message = message.replace(message, "");
 		}
 		return message;
 	}
-	
+
 	public int getPort() {
 		return m_serverPort;
 	}
-	
+
 	public InetAddress getAddress() {
 		return m_serverAddress;
 	}
-	
+
 	public DatagramSocket getSocket() {
 		return m_socket;
 	}
-	
-//	private void heartBeat(String name) {
-//		Thread heartBeat = new Thread() {
-//			String message = name + "-Calive%";
-//			int sleepTimeInMs = 10000;
-//			public void run() {
-//				while (true) {
-//					try {
-//						DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length, m_serverAddress, m_serverPort);
-//						m_socket.send(packet);
-//						sleep(sleepTimeInMs);
-//					} catch (InterruptedException e) {
-//						e.printStackTrace();
-//					} catch (IOException e) {
-//						e.printStackTrace();
-//					}
-//				}
-//			}
-//
-//		};
-//		heartBeat.start();
-//	}
 
 	public void sendChatMessage(String message) throws IOException {
 		Random generator = new Random();

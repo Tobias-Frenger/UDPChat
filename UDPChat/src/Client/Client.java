@@ -28,18 +28,23 @@ public class Client implements ActionListener {
 		m_name = userName;
 		// Start up GUI (runs in its own thread)
 		m_GUI = new ChatGUI(this, m_name);
-	} 
-	
+	}
+
+	public ServerConnection getConnection() {
+		return m_connection;
+	}
+
 	public String getName() {
 		return m_name;
 	}
 
 	private void connectToServer(String hostName, int port) throws IOException {
 		// Create a new server connection
-		m_connection = new ServerConnection(hostName, port, this);
-
+		m_connection = new ServerConnection(hostName, port);
+		new HeartBeat(m_connection, this).start();
 		if (m_connection.handshake(m_name + "-connection%")) {
 			listenForServerMessages();
+
 		} else {
 			System.err.println("Unable to connect to server");
 		}
@@ -49,7 +54,8 @@ public class Client implements ActionListener {
 		// Use the code below once m_connection.receiveChatMessage() has been
 		// implemented properly.
 		do {
-			m_GUI.displayMessage(m_connection.receiveChatMessage());
+			if (!m_connection.receiveChatMessage().contains("-Salive%"))
+				m_GUI.displayMessage(m_connection.receiveChatMessage());
 		} while (true);
 	}
 

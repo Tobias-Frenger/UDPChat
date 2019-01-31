@@ -15,14 +15,15 @@ import java.net.DatagramPacket;
 public class HeartBeat extends Thread {
 	private int sleepTimeInMs = 10000;
 	private ServerConnection serverConnection;
-	private String name = "";
+	private Client client;
 
-	public HeartBeat(ServerConnection serverConnection, String name) {
+	public HeartBeat(ServerConnection serverConnection, Client client) {
 		this.serverConnection = serverConnection;
-		this.name = name;
+		this.client = client;
 	}
 
 	public void run() {
+		String name = client.getName();
 		String message = name + "-isAlive%";
 		while (true) {
 			try {
