@@ -13,16 +13,18 @@ import java.util.Iterator;
  */
 
 public class HeartBeat extends Thread{
-	private int sleepTimeInMs = 10000;
+	private int sleepTimeInMs = 1000;
 	private Server server;
 	
 	public HeartBeat(Server server) {
 		this.server = server;
 	}
 	
+	@Override
 	public void run() {
 		String message = "-Salive%";
 		while (true) {
+//			System.out.println("Server-{BEAT}-");
 			try {
 				ClientConnection c = null;
 				for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {

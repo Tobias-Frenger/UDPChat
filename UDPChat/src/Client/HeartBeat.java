@@ -13,7 +13,7 @@ import java.net.DatagramPacket;
  */
 
 public class HeartBeat extends Thread {
-	private int sleepTimeInMs = 10000;
+	private int sleepTimeInMs = 1000;
 	private ServerConnection serverConnection;
 	private Client client;
 
@@ -21,12 +21,14 @@ public class HeartBeat extends Thread {
 		this.serverConnection = serverConnection;
 		this.client = client;
 	}
-
+	
+	@Override
 	public void run() {
 		String name = client.getName();
 		String message = name + "-isAlive%";
-		while (true) {
+		while (serverConnection.hasHeartBeat()) {
 			try {
+//				System.out.println("Client-{BEAT}");
 				DatagramPacket packet = new DatagramPacket(
 							message.getBytes(), 
 							message.getBytes().length,

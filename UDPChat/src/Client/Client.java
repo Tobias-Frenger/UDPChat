@@ -3,6 +3,7 @@ package Client;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.UUID;
 
 public class Client implements ActionListener {
 	// TEST COMMENT COMMIT
@@ -40,11 +41,11 @@ public class Client implements ActionListener {
 
 	private void connectToServer(String hostName, int port) throws IOException {
 		// Create a new server connection
-		m_connection = new ServerConnection(hostName, port);
-		new HeartBeat(m_connection, this).start();
-		if (m_connection.handshake(m_name + "-connection%")) {
+		m_connection = new ServerConnection(hostName, port, this);
+		System.out.println("client-side connect");
+		String id = UUID.randomUUID().toString();
+		if (m_connection.handshake("-ack%" + m_name + "-name%" + id + "-ID%" + "-connection%")) {
 			listenForServerMessages();
-
 		} else {
 			System.err.println("Unable to connect to server");
 		}
@@ -54,19 +55,35 @@ public class Client implements ActionListener {
 		// Use the code below once m_connection.receiveChatMessage() has been
 		// implemented properly.
 		do {
-			if (!m_connection.receiveChatMessage().contains("-Salive%"))
-				m_GUI.displayMessage(m_connection.receiveChatMessage());
+			String message = m_connection.receiveChatMessage();
+			if (!(message.contains("-Salive%") || message.contains("-ack%"))
+					|| message.contains("-socketDC%")) {
+				m_GUI.displayMessage(message);
+			} else if (message.contains("-socketDC%")) {
+				m_connection.getSocket().close();
+				m_connection.getSocket().disconnect();
+			} else if (message.contains("-ack%")) {
+				System.out.println("ACK RECEIVED BY CLIENT");
+				String[] id = message.split("-ack%");
+				System.out.println("client-side: " + id[0]);
+				m_connection.getMessageMap().put(id[0], true);
+//				m_connection.getMessageMap().get(id[0]).equals(true);
+				System.out.println("CLIENT SET TO TRUE " + m_connection.getMessageMap().get(id[0]).booleanValue());
+				m_connection.setAck(true);
+			}
 		} while (true);
 	}
 
 	// Sole ActionListener method; acts as a callback from GUI when user hits enter
 	// in input field
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		// Since the only possible event is a carriage return in the text input field,
 		// the text in the chat input field can now be sent to the server.
 		try {
-			m_connection.sendChatMessage(m_name + "-name%" + m_GUI.getInput());
+			String uniqueID = UUID.randomUUID().toString();
+			m_connection.sendChatMessage("-ack%" + m_name + "-name%" + uniqueID + "-ID%" + m_GUI.getInput());
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

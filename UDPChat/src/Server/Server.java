@@ -15,7 +15,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Timer;
 
 public class Server {
 
@@ -24,7 +23,7 @@ public class Server {
 	private HashMap<String, Integer> clientsConnected = new HashMap<String, Integer>();
 	private Message SMessage = new Message(this);
 	private HeartBeat heartBeat;
-	
+
 	public static void main(String[] args) throws IOException {
 		if (args.length < 1) {
 			System.err.println("Usage: java Server portnumber");
@@ -33,21 +32,20 @@ public class Server {
 		try {
 			Server instance = new Server(Integer.parseInt(args[0]));
 			instance.listenForClientMessages();
-
 		} catch (NumberFormatException e) {
 			System.err.println("Error: port number must be an integer.");
 			System.exit(-1);
 		}
 	}
-	
+
 	public Message messages() {
 		return SMessage;
 	}
-	
+
 	public ArrayList<ClientConnection> getConnectedClients() {
 		return m_connectedClients;
 	}
-	
+
 	// Creates a DatagramSocket with unique port number
 	private Server(int portNumber) throws SocketException {
 		m_socket = new DatagramSocket(portNumber);
@@ -64,27 +62,50 @@ public class Server {
 			// Unmarshal message
 			String message = SMessage.unmarshalMessage(dp);
 			// Retrieve the client name and put inside local string
-			String clientName = getClientName(message);
+			String clientName = getClientNameFromMessage(message);
+			// Send acknowledgement - message was received
+			String messageID = getMessageID(message, clientName);
+
+			if (message.contains("-ack%")) {
+				SMessage.sendPrivateMessage(messageID + "-ack%", clientName);
+				message = message.replace("-ack%", "");
+			}
 			// Receive heart beat message
 			if (message.contains("-isAlive%")) {
 				System.out.println(message);
+				SMessage.receiveHeartbeat(dp, clientName);
 			}
-			// Removing key word from message
-			message = message.replace("-name%", " -> ");
+			// Removing key words and messageID from message
+			message = message.replace(messageID, "");
+			if (!message.contains("-connection%")) {
+				message = message.replace("-name%", " -> ");
+			} else {
+				message = message.replace("-name%", "");
+			}
+			message = message.replace("-ID%", "");
 			// Respond in correct manner
 			decisionBasedOnInput(dp, message, clientName);
 		} while (true);
 	}
+	
+	// This method returns the unique id that is within the message
+	private String getMessageID(String message, String name) {
+		String[] temp = message.split("-ID%");
+		temp[0] = temp[0].replace("-ack%", "");
+		temp[0] = temp[0].replace(name + "-name%", "");
+		return temp[0];
+	}
 
 	// Method that makes decisions based on the input
 	private void decisionBasedOnInput(DatagramPacket datapack, String message, String name) throws IOException {
+		System.out.println(message);
 		// CONNECTED TO SERVER
 		if (message.contains("-connection%")) {
-			connectClientToServer(message, datapack);
+			addClient(name, datapack.getAddress(), datapack.getPort());
 			if (isConnected(name, datapack.getPort())) {
-				message = message.replaceAll(message, name + " has connected");
+				message = message.replace(message, name + " has connected");
 			} else {
-				message = message.replaceAll(message, "User tried to connect but failed");
+				message = message.replace(message, "User tried to connect but failed");
 			}
 		}
 		if (message.contains("/join") && !isConnected(name, datapack.getPort())) {
@@ -103,26 +124,23 @@ public class Server {
 			// USER LEAVE CHAT
 			else if (message.contains("/leave")) {
 				SMessage.messageLeave(message, name);
-			}
+			} 
 			// PRINT MESSAGE
 			else {
 				SMessage.broadcast(message);
 			}
 		}
 	}
-
-	private String getClientName(String message) {
+	
+	private String getClientNameFromMessage(String message) {
 		message = message.replace("-connection%", "");
-		String[] temp = message.split("-name%");
-		return temp[0];
+		message = message.replace("-ack%", "");
+		String[] temp1 = message.split("-ID%");
+		String[] temp2 = temp1[0].split("-name%");
+		return temp2[0];
 	}
 
-	private void connectClientToServer(String message, DatagramPacket datap) {
-		String[] mes = message.split("-connection%");
-		addClient(mes[0], datap.getAddress(), datap.getPort());
-	}
-
-	// reconnects disconnected user and returns message for broadcast
+	// Reconnects disconnected user and returns message for broadcast
 	private String reconnectClient(String message, String name, DatagramPacket dp) {
 		addClient(name, dp.getAddress(), dp.getPort());
 		message = message.replace(message, name + " has reconnected");
@@ -136,13 +154,14 @@ public class Server {
 			for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 				c = itr.next();
 				if (c.hasName(name)) {
+
 					return true; // client is connected
 				}
 			}
 		}
 		return false; // client was not connected
 	}
-	
+
 	public DatagramSocket getSocket() {
 		return m_socket;
 	}
@@ -150,6 +169,7 @@ public class Server {
 	public boolean addClient(String name, InetAddress address, int port) {
 		ClientConnection c = null;
 		if (!clientsConnected.containsKey(name)) {
+			
 			clientsConnected.put(name, port);
 			for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 				c = itr.next();
@@ -159,6 +179,8 @@ public class Server {
 			}
 			c = new ClientConnection(name, address, port);
 			m_connectedClients.add(c);
+			// starts the counter which checks if a value has been updated or not
+			c.isAliveCounter(this, name);
 			return true;
 		}
 		return false;
@@ -168,15 +190,14 @@ public class Server {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
-			System.out.println(c.getName());
 			if (c.hasName(name)) {
 				SMessage.broadcast(name + " disconnected");
 				m_connectedClients.remove(c);
-				m_socket.disconnect();
+				SMessage.sendPrivateMessage("-socketDC%", c.getName());
 				return true;
 			}
 		}
-		System.out.println("Client " + name + " not found\n" + "Unable to disconnect");
+		System.out.println("Tried to disconnect " + name + " but client was already disconnected");
 		return false;
 	}
 }

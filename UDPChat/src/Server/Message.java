@@ -18,7 +18,8 @@ public class Message {
 	Message(Server server) {
 		this.server = server;
 	}
-
+	
+	// Message that the server sends to the client(s) after receiving a /leave message
 	public void messageLeave(String message, String name) throws IOException {
 		message = message.replaceAll("/leave", "");
 		message = message.replace(name + " -> ", "");
@@ -27,7 +28,8 @@ public class Message {
 		}
 		server.disconnectClient(name);
 	}
-
+	
+	// Message that the server sends out when a client sends a /tell message
 	public void messageTell(String message, String name) throws IOException {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
@@ -44,7 +46,7 @@ public class Message {
 			}
 		}
 	}
-
+	
 	public void sendPrivateMessage(String message, String name) throws IOException {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
@@ -83,15 +85,21 @@ public class Message {
 		}
 		return dp;
 	}
-	
+
 	public String unmarshalMessage(DatagramPacket datap) {
 		String message = new String(datap.getData(), 0, datap.getLength());
 		return message;
 	}
-	
-	private String receiveHeartbeat(DatagramPacket dp) {
-		String message;
-		message = new String(dp.getData(), 0, dp.getLength());
+
+	public String receiveHeartbeat(DatagramPacket dp, String name) {
+		ClientConnection c;
+		String message = unmarshalMessage(dp);
+		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
+			c = itr.next();
+			if (message.contains(c.getName())) {
+				c.clientIsAlive();
+			}
+		}
 		return message;
 	}
 }

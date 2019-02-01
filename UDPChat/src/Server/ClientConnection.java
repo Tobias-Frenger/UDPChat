@@ -12,7 +12,7 @@ import java.util.Random;
 
 /**
  * 
- * @author brom 
+ * @author brom
  */
 public class ClientConnection {
 
@@ -20,28 +20,65 @@ public class ClientConnection {
 
 	private final String m_name;
 	private final InetAddress m_address;
-	private final int m_port; 
-	
+	private final int m_port;
+	private boolean isAlive = false;
+
 	public ClientConnection(String name, InetAddress address, int port) {
 		m_name = name;
 		m_address = address;
 		m_port = port;
+		System.out.println("NEW CONNECTION: " + name);
+	}
+
+	public void clientIsAlive() {
+		isAlive = true;
+	}
+	
+	// Checks if the client is still alive.
+	// disconnects client otherwise
+	public void isAliveCounter(Server server, String name) {
+		Thread thread = new Thread() {
+			
+			@Override
+			public void run() {
+				String clientName = name;
+				int sleepInMs = 3000;
+				while (true) {
+					System.out.println("Server-side: " + clientName + " is alive");
+					try {
+						sleep(sleepInMs);
+						if (isAlive) {
+							isAlive = false;
+						} else {
+							System.out.println("Disconnecting " + clientName);
+							server.disconnectClient(clientName);
+							break;
+						}
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		};
+		thread.start();
 	}
 
 	public void sendMessage(String message, DatagramSocket socket) throws IOException {
-		Random generator = new Random();
-		double failure = generator.nextDouble();
-		System.out.println(message);
-		if (failure > TRANSMISSION_FAILURE_RATE) {
-			// TODO: send a message to this client using socket.
-			DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length, m_address,
-					m_port);
-			socket.send(packet);
-		} else {
-			// Message got lost
-			System.out.println("Message lost in the void - CC");
-		}
 
+		// artificially produces loss of messages
+		Random generator = new Random();
+		try {
+			double failure = generator.nextDouble();
+			if (failure > TRANSMISSION_FAILURE_RATE) {
+				DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length, m_address,
+						m_port);
+				socket.send(packet);
+			}
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 	}
 
 	public String getName() {
