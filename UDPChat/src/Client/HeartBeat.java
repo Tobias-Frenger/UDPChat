@@ -28,7 +28,6 @@ public class HeartBeat extends Thread {
 		String message = name + "-isAlive%";
 		while (serverConnection.hasHeartBeat()) {
 			try {
-//				System.out.println("Client-{BEAT}");
 				DatagramPacket packet = new DatagramPacket(
 							message.getBytes(), 
 							message.getBytes().length,

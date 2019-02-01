@@ -12,6 +12,10 @@ import java.util.Iterator;
  * @author a16tobfr
  */
 
+/*
+ * TODO
+ * Make class more fitting to the class description
+ */
 public class Message {
 	Server server;
 
@@ -29,6 +33,11 @@ public class Message {
 		server.disconnectClient(name);
 	}
 	
+	/*
+	 * TODO
+	 * Fix on client side.
+	 * Messages not output to GUI.
+	 */
 	// Message that the server sends out when a client sends a /tell message
 	public void messageTell(String message, String name) throws IOException {
 		ClientConnection c;
@@ -65,6 +74,11 @@ public class Message {
 		}
 	}
 
+	/*
+	 * TODO
+	 * Fix method to send message instead of name
+	 * uniqueID needs to be sent along with the message
+	 */
 	public void printListOfUsers(String name) throws IOException {
 		ClientConnection c;
 		sendPrivateMessage("---Chat room users---", name);

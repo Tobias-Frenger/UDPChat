@@ -24,7 +24,6 @@ public class HeartBeat extends Thread{
 	public void run() {
 		String message = "-Salive%";
 		while (true) {
-//			System.out.println("Server-{BEAT}-");
 			try {
 				ClientConnection c = null;
 				for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {

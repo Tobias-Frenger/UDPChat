@@ -3,7 +3,6 @@ package Client;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.UUID;
 
 public class Client implements ActionListener {
@@ -11,7 +10,7 @@ public class Client implements ActionListener {
 	private String m_name = null;
 	private final ChatGUI m_GUI;
 	private ServerConnection m_connection = null;
-	private int messageid = 0;
+
 	public static void main(String[] args) throws IOException {
 		if (args.length < 3) {
 			System.err.println("Usage: java Client serverhostname serverportnumber username");
@@ -52,44 +51,74 @@ public class Client implements ActionListener {
 		}
 	}
 
+	/*
+	 * TODO
+	 * Make code more readable
+	 * split into functions
+	 */
 	private void listenForServerMessages() throws IOException {
-		HashMap<Integer, String> hm = new HashMap<>();
-		
-		// Use the code below once m_connection.receiveChatMessage() has been
-		// implemented properly.
 		do {
 			String message = m_connection.receiveChatMessage();
-			if (!(message.contains("-Salive%") || message.contains("-ack%"))
-					|| message.contains("-socketDC%")) {
-				hm.put(messageid, message);
-				m_GUI.displayMessage(message);
-			} else if (message.contains("-socketDC%")) {
-				m_connection.getSocket().close();
-				m_connection.getSocket().disconnect();
-			} else if (message.contains("-ack%")) {
-				System.out.println("ACK RECEIVED BY CLIENT");
-				String[] id = message.split("-ack%");
-				System.out.println("client-side: " + id[0]);
-				m_connection.getMessageMap().put(id[0], true);
-//				m_connection.getMessageMap().get(id[0]).equals(true);
-				System.out.println("CLIENT SET TO TRUE " + m_connection.getMessageMap().get(id[0]).booleanValue());
-				m_connection.setAck(true);
+			// cleaning up incomming message
+			if (message.contains("-ID%")) {
+				System.out.println("incomming: " + message);
+				String specialID = "";
+				if (!message.contains("-ack%")) {
+					// extracting the special id from the message
+					// removing unecessary information from message
+					String[] extractID = message.split("-ID%");
+					String idtemp[] = extractID[0].split(" -> ");
+					idtemp[1] = idtemp[1].replace("-ID%", "");
+					specialID = idtemp[1];
+					String[] temp = extractID[0].split(" -> ");
+					specialID = temp[1];
+					message = message.replace(specialID, "");
+					message = message.replace("-ID%", "");
+					System.out.println("----\nMESSAGE C NO ACK: " + message + "\n" + specialID + "\n----");
+				} else {
+					System.out.println("MESSAGE C ACK PRE: " + message);
+					String[] temp = message.split("-ID%");
+					specialID = temp[0];
+					message = message.replace(specialID + "-ID%", "");
+					System.out.println("MESSAGE C ACK POST: " + message + "\n" + " - " + specialID);
+				}
+
+				System.out.println("incomming specialID: " + specialID);
+				System.out.println("incomming(altered): " + message);
+				if (m_connection.getMessageMap().get(specialID)) {
+					System.out.println(specialID + " = " + m_connection.getMessageMap().get(specialID) + " - ignore");
+				}
+				if (!m_connection.getMessageMap().get(specialID)) {
+					System.out.println(specialID + " = " + m_connection.getMessageMap().get(specialID));
+					if (!(message.contains("-Salive%") || message.contains("-ack%"))
+							|| message.contains("-socketDC%")) {
+						m_GUI.displayMessage(message);
+					}
+					if (message.contains("-socketDC%")) {
+						m_connection.getSocket().close();
+						m_connection.getSocket().disconnect();
+					}
+					if (message.contains("-ack%")) {
+						System.out.println("ACK RECEIVED BY CLIENT");
+						m_connection.setAck(true);
+					}
+					if (!message.contains("-ack%")) {
+						m_connection.getMessageMap().put(specialID, true);
+					}
+				}
 			}
 		} while (true);
 	}
 
 	// Sole ActionListener method; acts as a callback from GUI when user hits enter
 	// in input field
-
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		// Since the only possible event is a carriage return in the text input field,
-		// the text in the chat input field can now be sent to the server.
 		try {
+			// creates a unique id that is being sent to the server
 			String uniqueID = UUID.randomUUID().toString();
 			m_connection.sendChatMessage("-ack%" + m_name + "-name%" + uniqueID + "-ID%" + m_GUI.getInput());
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		m_GUI.clearInput();

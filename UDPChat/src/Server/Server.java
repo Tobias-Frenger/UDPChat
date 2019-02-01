@@ -16,6 +16,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+/*
+ * TODO
+ * Clean up the code, split into new/existing classes if necessary
+ */
 public class Server {
 
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
@@ -67,7 +71,13 @@ public class Server {
 			String messageID = getMessageID(message, clientName);
 
 			if (message.contains("-ack%")) {
-				SMessage.sendPrivateMessage(messageID + "-ack%", clientName);
+				String[] extractID = message.split("-ID%");
+				String[] temp = extractID[0].split("-name%");
+				String specialID = temp[1];
+				System.out.println("S ACK RECIEVED: " + message);
+				System.out.println("SERVER SPECIALID: " + specialID);
+				SMessage.sendPrivateMessage(specialID+"-ID%"+"-ack%", clientName);
+//				SMessage.sendPrivateMessage(messageID + "-ack%", clientName);
 				message = message.replace("-ack%", "");
 			}
 			// Receive heart beat message
@@ -76,13 +86,11 @@ public class Server {
 				SMessage.receiveHeartbeat(dp, clientName);
 			}
 			// Removing key words and messageID from message
-			message = message.replace(messageID, "");
 			if (!message.contains("-connection%")) {
 				message = message.replace("-name%", " -> ");
 			} else {
 				message = message.replace("-name%", "");
 			}
-			message = message.replace("-ID%", "");
 			// Respond in correct manner
 			decisionBasedOnInput(dp, message, clientName);
 		} while (true);
