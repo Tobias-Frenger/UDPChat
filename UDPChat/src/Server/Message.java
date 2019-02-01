@@ -5,19 +5,14 @@ import java.net.DatagramPacket;
 import java.util.Iterator;
 
 /*
- * This class handles all the messages 
- * that are being sent to the client 
- * from the server 
+ * This class handles multiple message types.
  * 
  * @author a16tobfr
  */
 
-/*
- * TODO
- * Make class more fitting to the class description
- */
 public class Message {
-	Server server;
+	private Server server;
+	private String message;
 
 	Message(Server server) {
 		this.server = server;

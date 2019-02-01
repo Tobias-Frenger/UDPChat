@@ -109,8 +109,8 @@ public class ServerConnection {
 		// artificially produces loss of messages
 		Random generator = new Random();
 		String uniqueID = retrieveUniqueID(message);
-		threadID.add(uniqueID);
-		messageMap.put(uniqueID, false);
+//		threadID.add(uniqueID);
+//		messageMap.put(uniqueID, false);
 		System.out.println("[client] uniqueID sent: " + uniqueID);
 		Thread thread = new Thread() {
 			String threadMessageID = uniqueID;

@@ -11,6 +11,8 @@ public class Client implements ActionListener {
 	private String m_name = null;
 	private final ChatGUI m_GUI;
 	private ServerConnection m_connection = null;
+	private String messageId = "";
+	private String mess;
 
 	public static void main(String[] args) throws IOException {
 		if (args.length < 3) {
@@ -43,7 +45,6 @@ public class Client implements ActionListener {
 	private void connectToServer(String hostName, int port) throws IOException {
 		// Create a new server connection
 		m_connection = new ServerConnection(hostName, port, this);
-		System.out.println("client-side connect");
 		String id = UUID.randomUUID().toString();
 		if (m_connection.handshake("-ack%" + m_name + "-name%" + id + "-ID%" + "-connection%")) {
 			listenForServerMessages();
@@ -52,69 +53,107 @@ public class Client implements ActionListener {
 		}
 	}
 
-	/*
-	 * TODO
-	 * Make code more readable
-	 * split into functions
-	 * NEED SEPERATE HASHMAP FOR RECEIVER ID'S
-	 */
+	// extracting the special id from the message
+	// removing unnecessary information from message
+	private void messageTrimmer() {
+		String[] extractID = getMessage().split("-ID%");
+		String idtemp[] = extractID[0].split(" -> ");
+		idtemp[1] = idtemp[1].replace("-ID%", "");
+		String[] temp = extractID[0].split(" -> ");
+		setSpecialID(temp[1]);
+		setMessage(getMessage().replace(getSpecialID(), ""));
+		setMessage(getMessage().replace("-ID%", ""));
+
+	}
+
+	private void ackMessageTrimmer() {
+		System.out.println("MESSAGE C ACK PRE: " + getMessage());
+		String[] temp = getMessage().split("-ID%");
+		setSpecialID(temp[0]);
+		setMessage(getMessage().replace(getSpecialID() + "-ID%", ""));
+		System.out.println("MESSAGE C ACK POST: " + getMessage() + "\n" + " - " + getSpecialID());
+
+	}
+
+	private void displayMessage() {
+		m_GUI.displayMessage(getMessage());
+		System.out.println("message displayed");
+	}
+
+	private void disconnectSocket() {
+		m_connection.getSocket().close();
+		m_connection.getSocket().disconnect();
+	}
+
 	private void listenForServerMessages() throws IOException {
+		// Key = UUID.toString, Value = boolean set to false
 		HashMap<String, Boolean> receiverMap = new HashMap<>();
 		do {
-			String message = m_connection.receiveChatMessage();
-			// cleaning up incomming message
-			if (message.contains("-ID%")) {
-				System.out.println("incomming: " + message);
-				String specialID = "";
-				if (!message.contains("-ack%")) {
-					// extracting the special id from the message
-					// removing unecessary information from message
-					String[] extractID = message.split("-ID%");
-					String idtemp[] = extractID[0].split(" -> ");
-					idtemp[1] = idtemp[1].replace("-ID%", "");
-					specialID = idtemp[1];
-					String[] temp = extractID[0].split(" -> ");
-					specialID = temp[1];
-					message = message.replace(specialID, "");
-					message = message.replace("-ID%", "");
-					System.out.println("----\nMESSAGE C NO ACK: " + message + "\n" + specialID + "\n----");
+			setMessage(m_connection.receiveChatMessage());
+			// cleaning up incoming message
+			if (getMessage().contains("-ID%")) {
+				System.out.println("incomming: " + getMessage());
+				if (!getMessage().contains("-ack%")) {
+					messageTrimmer();
 				} else {
-					System.out.println("MESSAGE C ACK PRE: " + message);
-					String[] temp = message.split("-ID%");
-					specialID = temp[0];
-					message = message.replace(specialID + "-ID%", "");
-					System.out.println("MESSAGE C ACK POST: " + message + "\n" + " - " + specialID);
+					// extract specialID from message
+					ackMessageTrimmer();
 				}
 
-				System.out.println("incomming specialID: " + specialID);
-				System.out.println("incomming(altered): " + message);
-				
-				if (m_connection.getMessageMap().get(specialID)) {
-					
-					System.out.println(specialID + " = " + m_connection.getMessageMap().get(specialID) + " - ignore");
-				}
-				if (!m_connection.getMessageMap().get(specialID) || !receiverMap.containsKey(specialID)) {
-					
-					System.out.println(specialID + " = " + m_connection.getMessageMap().get(specialID));
-					if (!(message.contains("-Salive%") || message.contains("-ack%"))
-							|| message.contains("-socketDC%")) {
-						m_GUI.displayMessage(message);
-					}
-					if (message.contains("-socketDC%")) {
-						m_connection.getSocket().close();
-						m_connection.getSocket().disconnect();
-					}
-					if (message.contains("-ack%")) {
+				System.out.println("incomming specialID: " + getSpecialID());
+				System.out.println("incomming(altered): " + getMessage());
+				System.out.println(" - 1Does receiverKEY exist: " + receiverMap.containsKey(getSpecialID()));
+				System.out.println(" - 2 map VALUE: " + receiverMap.get(getSpecialID()));
+				if (!receiverMap.containsKey(getSpecialID())) {
+
+					if (getMessage().contains("-ack%")) {
 						System.out.println("ACK RECEIVED BY CLIENT");
 						m_connection.setAck(true);
+						receiverMap.put(getSpecialID(), false);
 					}
-					if (!message.contains("-ack%")) {
-						m_connection.getMessageMap().put(specialID, true);
+					if (!getMessage().contains("-ack%")) {
+
+						receiverMap.put(getSpecialID(), true);
+					}
+					System.out.println(" - 3 map VALUE: " + receiverMap.get(getSpecialID()));
+				}
+				if (receiverMap.containsKey(getSpecialID())) {
+					if (receiverMap.get(getSpecialID())) {
+						System.out.println(" -% " + getMessage());
+						System.out.println(getSpecialID() + " = " + m_connection.getMessageMap().get(getSpecialID()));
+						if (!(getMessage().contains("-Salive%") || getMessage().contains("-ack%"))
+								|| getMessage().contains("-socketDC%")) {
+							displayMessage();
+						}
+						if (getMessage().contains("-socketDC%")) {
+							disconnectSocket();
+						}
 					}
 				}
-				receiverMap.put(specialID, true);
+
+				receiverMap.put(getSpecialID(), true);
 			}
 		} while (true);
+	}
+
+	private void trimFinalNote() {
+		setMessage(getMessage().replaceAll(getSpecialID() + "-ID%", ""));
+	}
+
+	private String getSpecialID() {
+		return messageId;
+	}
+
+	private void setSpecialID(String string) {
+		messageId = string;
+	}
+
+	private void setMessage(String string) {
+		mess = string;
+	}
+
+	private String getMessage() {
+		return mess;
 	}
 
 	// Sole ActionListener method; acts as a callback from GUI when user hits enter

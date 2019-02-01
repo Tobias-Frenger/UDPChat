@@ -27,6 +27,8 @@ public class Server {
 	private HashMap<String, Integer> clientsConnected = new HashMap<String, Integer>();
 	private Message SMessage = new Message(this);
 	private HeartBeat heartBeat;
+	private String myMessy = "";
+	private String nameOfSender = "";
 
 	public static void main(String[] args) throws IOException {
 		if (args.length < 1) {
@@ -56,7 +58,34 @@ public class Server {
 		heartBeat = new HeartBeat(this);
 		heartBeat.start();
 	}
-
+	
+	private void ackMessageTrimmer() throws IOException {
+		String[] extractID = getMessage().split("-ID%");
+		String[] temp = extractID[0].split("-name%");
+		String specialID = temp[1];
+		System.out.println("S ACK RECIEVED: " + getMessage());
+		System.out.println("SERVER SPECIALID: " + specialID);
+		SMessage.sendPrivateMessage(specialID+"-ID%"+"-ack%", getSenderName());
+//		SMessage.sendPrivateMessage(messageID + "-ack%", clientName);
+		setMessage(getMessage().replace("-ack%", ""));
+	}
+	
+	private void setMessage(String string) {
+		myMessy = string;
+	}
+	
+	private String getMessage() {
+		return myMessy;
+	}
+	
+	private void setSenderName(String string) {
+		nameOfSender = string;
+	}
+	
+	private String getSenderName() {
+		return nameOfSender;
+	}
+	
 	// Listens for messages and sends the correct type back to the client
 	private void listenForClientMessages() throws IOException {
 		System.out.println("Waiting for client messages... ");
@@ -64,45 +93,38 @@ public class Server {
 			// Retrieve message from client
 			DatagramPacket dp = SMessage.retrieveMessage();
 			// Unmarshal message
-			String message = SMessage.unmarshalMessage(dp);
+			setMessage(SMessage.unmarshalMessage(dp));
 			// Retrieve the client name and put inside local string
-			String clientName = getClientNameFromMessage(message);
+			setSenderName(getClientNameFromMessage(getMessage()));
 			// Send acknowledgement - message was received
-			String messageID = getMessageID(message, clientName);
+//			String messageID = getMessageID(getMessage(), getSenderName());
 
-			if (message.contains("-ack%")) {
-				String[] extractID = message.split("-ID%");
-				String[] temp = extractID[0].split("-name%");
-				String specialID = temp[1];
-				System.out.println("S ACK RECIEVED: " + message);
-				System.out.println("SERVER SPECIALID: " + specialID);
-				SMessage.sendPrivateMessage(specialID+"-ID%"+"-ack%", clientName);
-//				SMessage.sendPrivateMessage(messageID + "-ack%", clientName);
-				message = message.replace("-ack%", "");
+			if (getMessage().contains("-ack%")) {
+				ackMessageTrimmer();
 			}
 			// Receive heart beat message
-			if (message.contains("-isAlive%")) {
-				System.out.println(message);
-				SMessage.receiveHeartbeat(dp, clientName);
+			if (getMessage().contains("-isAlive%")) {
+				System.out.println(getMessage());
+				SMessage.receiveHeartbeat(dp, getSenderName());
 			}
 			// Removing key words and messageID from message
-			if (!message.contains("-connection%")) {
-				message = message.replace("-name%", " -> ");
+			if (!getMessage().contains("-connection%")) {
+				setMessage(getMessage().replace("-name%", " -> "));
 			} else {
-				message = message.replace("-name%", "");
+				setMessage(getMessage().replace("-name%", ""));
 			}
 			// Respond in correct manner
-			decisionBasedOnInput(dp, message, clientName);
+			decisionBasedOnInput(dp, getMessage(), getSenderName());
 		} while (true);
 	}
 	
 	// This method returns the unique id that is within the message
-	private String getMessageID(String message, String name) {
-		String[] temp = message.split("-ID%");
-		temp[0] = temp[0].replace("-ack%", "");
-		temp[0] = temp[0].replace(name + "-name%", "");
-		return temp[0];
-	}
+//	private String getMessageID(String message, String name) {
+//		String[] temp = message.split("-ID%");
+//		temp[0] = temp[0].replace("-ack%", "");
+//		temp[0] = temp[0].replace(name + "-name%", "");
+//		return temp[0];
+//	}
 
 	// Method that makes decisions based on the input
 	private void decisionBasedOnInput(DatagramPacket datapack, String message, String name) throws IOException {
