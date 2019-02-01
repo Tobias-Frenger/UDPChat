@@ -76,6 +76,7 @@ public class ServerConnection {
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		m_socket.receive(packet);
 		// unMarshalling message:
+		
 		String message = new String(packet.getData(), 0, packet.getLength());
 		return message;
 	}

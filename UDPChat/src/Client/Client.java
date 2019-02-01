@@ -3,6 +3,7 @@ package Client;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.UUID;
 
 public class Client implements ActionListener {
@@ -10,7 +11,7 @@ public class Client implements ActionListener {
 	private String m_name = null;
 	private final ChatGUI m_GUI;
 	private ServerConnection m_connection = null;
-
+	private int messageid = 0;
 	public static void main(String[] args) throws IOException {
 		if (args.length < 3) {
 			System.err.println("Usage: java Client serverhostname serverportnumber username");
@@ -52,12 +53,15 @@ public class Client implements ActionListener {
 	}
 
 	private void listenForServerMessages() throws IOException {
+		HashMap<Integer, String> hm = new HashMap<>();
+		
 		// Use the code below once m_connection.receiveChatMessage() has been
 		// implemented properly.
 		do {
 			String message = m_connection.receiveChatMessage();
 			if (!(message.contains("-Salive%") || message.contains("-ack%"))
 					|| message.contains("-socketDC%")) {
+				hm.put(messageid, message);
 				m_GUI.displayMessage(message);
 			} else if (message.contains("-socketDC%")) {
 				m_connection.getSocket().close();

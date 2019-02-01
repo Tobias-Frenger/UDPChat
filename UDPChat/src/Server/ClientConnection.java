@@ -16,7 +16,7 @@ import java.util.Random;
  */
 public class ClientConnection {
 
-	static double TRANSMISSION_FAILURE_RATE = 0.0;
+	static double TRANSMISSION_FAILURE_RATE = 0.3;
 
 	private final String m_name;
 	private final InetAddress m_address;
@@ -66,7 +66,6 @@ public class ClientConnection {
 	}
 
 	public void sendMessage(String message, DatagramSocket socket) throws IOException {
-
 		// artificially produces loss of messages
 		Random generator = new Random();
 		try {

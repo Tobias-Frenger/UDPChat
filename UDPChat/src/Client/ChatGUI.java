@@ -22,9 +22,6 @@ public class ChatGUI extends JFrame implements ActionListener {
 	// This class should be sufficiently complete, although
 	// you are allowed to change it if you wish.
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private final JTextField m_chatInput;
 	private final JTextArea m_chatOutput;
