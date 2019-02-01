@@ -12,20 +12,39 @@ import java.util.Iterator;
 
 public class Message {
 	private Server server;
-	private String message;
+	private String message = "";
+	private String senderOfMessageName = "";
 
 	Message(Server server) {
 		this.server = server;
 	}
 	
+	private void setSender(String string) {
+		senderOfMessageName = string;
+	}
+	
+	private String getSender() {
+		return senderOfMessageName;
+	}
+	
+	private void setMessage(String string) {
+		message = string;
+	}
+	
+	private String getMessage() {
+		return message;
+	}
+	
 	// Message that the server sends to the client(s) after receiving a /leave message
 	public void messageLeave(String message, String name) throws IOException {
-		message = message.replaceAll("/leave", "");
-		message = message.replace(name + " -> ", "");
-		if (!message.isEmpty()) {
-			broadcast(name + " final note: " + message);
+		setSender(name);
+		setMessage(message);
+		setMessage(getMessage().replaceAll("/leave", ""));
+		setMessage(getMessage().replace(getSender() + " -> ", ""));
+		if (!getMessage().isEmpty()) {
+			broadcast(getSender() + " final note: " + getMessage() + "-leave%");
 		}
-		server.disconnectClient(name);
+		server.disconnectClient(getSender());
 	}
 	
 	/*

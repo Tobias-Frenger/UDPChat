@@ -56,16 +56,27 @@ public class Client implements ActionListener {
 	// extracting the special id from the message
 	// removing unnecessary information from message
 	private void messageTrimmer() {
-		String[] extractID = getMessage().split("-ID%");
-		String idtemp[] = extractID[0].split(" -> ");
-		idtemp[1] = idtemp[1].replace("-ID%", "");
-		String[] temp = extractID[0].split(" -> ");
-		setSpecialID(temp[1]);
-		setMessage(getMessage().replace(getSpecialID(), ""));
-		setMessage(getMessage().replace("-ID%", ""));
-
+		if (!getMessage().contains("-leave%")) {
+			String[] extractID = getMessage().split("-ID%");
+			String idtemp[] = extractID[0].split(" -> ");
+			idtemp[1] = idtemp[1].replace("-ID%", "");
+			String[] temp = extractID[0].split(" -> ");
+			setSpecialID(temp[1]);
+			setMessage(getMessage().replace(getSpecialID(), ""));
+			setMessage(getMessage().replace("-ID%", ""));
+		} else {
+			String[] extractID = getMessage().split("-ID%");
+			String[] temp = extractID[0].split(" final note: ");
+			setSpecialID(temp[1]);
+			setMessage(getMessage().replace(temp[1] + "-ID%", ""));
+			setMessage(getMessage().replace("-leave%", ""));
+		}
 	}
-
+	
+	/*
+	 * TODO
+	 * fix /leave
+	 */
 	private void ackMessageTrimmer() {
 		System.out.println("MESSAGE C ACK PRE: " + getMessage());
 		String[] temp = getMessage().split("-ID%");
@@ -84,7 +95,11 @@ public class Client implements ActionListener {
 		m_connection.getSocket().close();
 		m_connection.getSocket().disconnect();
 	}
-
+	
+	/*
+	 * TODO
+	 * implement /leave check with keyword
+	 */
 	private void listenForServerMessages() throws IOException {
 		// Key = UUID.toString, Value = boolean set to false
 		HashMap<String, Boolean> receiverMap = new HashMap<>();
@@ -136,6 +151,7 @@ public class Client implements ActionListener {
 		} while (true);
 	}
 
+	// TODO send unique keyword from Server in order to detect this type
 	private void trimFinalNote() {
 		setMessage(getMessage().replaceAll(getSpecialID() + "-ID%", ""));
 	}
