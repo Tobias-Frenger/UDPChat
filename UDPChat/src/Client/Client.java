@@ -53,6 +53,11 @@ public class Client implements ActionListener {
 		}
 	}
 
+	
+	/*
+	 * TODO
+	 * fix /join - similar to /leave
+	 */
 	// extracting the special id from the message
 	// removing unnecessary information from message
 	private void messageTrimmer() {
@@ -73,10 +78,7 @@ public class Client implements ActionListener {
 		}
 	}
 	
-	/*
-	 * TODO
-	 * fix /leave
-	 */
+
 	private void ackMessageTrimmer() {
 		System.out.println("MESSAGE C ACK PRE: " + getMessage());
 		String[] temp = getMessage().split("-ID%");

@@ -15,7 +15,7 @@ public class Message {
 	private String message = "";
 	private String senderOfMessageName = "";
 
-	Message(Server server) {
+	protected Message(Server server) {
 		this.server = server;
 	}
 	
@@ -44,7 +44,7 @@ public class Message {
 		if (!getMessage().isEmpty()) {
 			broadcast(getSender() + " final note: " + getMessage() + "-leave%");
 		}
-		server.disconnectClient(getSender());
+		server.disconnectClient();
 	}
 	
 	/*
@@ -55,20 +55,24 @@ public class Message {
 	// Message that the server sends out when a client sends a /tell message
 	public void messageTell(String message, String name) throws IOException {
 		ClientConnection c;
+		setMessage(message);
+		setSender(name);
+		String recipentName = "";
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
-			c = itr.next();
 			// Finds the correct user by looking by finding the combination:
-			// /tell <receiver name>
-			if (message.contains("/tell " + c.getName())) {
+						// /tell <receiver name>
+			c = itr.next();
+			recipentName = c.getName();
+			if (getMessage().contains("/tell " + recipentName)) {
 				// RECIPENT MESSAGE
-				message = message.replace("/tell " + c.getName(), "");
-				message = message.replace("->", " whispers ->");
-				System.out.println("messageTell(): " + message + " - - " + c.getName());
-				sendPrivateMessage(message, c.getName());
+				setMessage(getMessage().replace("/tell " + c.getName(), ""));
+				setMessage(getMessage().replace("->", " whispers ->"));
+				System.out.println("messageTell(): " + getMessage() + " - - " + c.getName());
+				sendPrivateMessage(getMessage(), c.getName());
 				// SENDER MESSAGE
-				message = message.replace(name, "You");
-				message = message.replace("whispers", "whisper to " + c.getName());
-				sendPrivateMessage(message, name);
+				setMessage(getMessage().replace(getSender(), "You"));
+				setMessage(getMessage().replace("whispers", "whisper to " + c.getName()));
+				sendPrivateMessage(getMessage(), getSender());
 			}
 		}
 	}

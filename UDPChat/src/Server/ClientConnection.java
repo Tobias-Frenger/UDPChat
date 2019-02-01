@@ -51,7 +51,7 @@ public class ClientConnection {
 							isAlive = false;
 						} else {
 							System.out.println("Disconnecting " + clientName);
-							server.disconnectClient(clientName);
+							server.disconnectClient();
 							break;
 						}
 					} catch (InterruptedException e1) {

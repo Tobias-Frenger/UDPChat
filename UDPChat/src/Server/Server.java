@@ -27,8 +27,9 @@ public class Server {
 	private HashMap<String, Integer> clientsConnected = new HashMap<String, Integer>();
 	private Message SMessage = new Message(this);
 	private HeartBeat heartBeat;
-	private String myMessy = "";
+	private String message = "";
 	private String nameOfSender = "";
+	private DatagramPacket datagramPacket;
 
 	public static void main(String[] args) throws IOException {
 		if (args.length < 1) {
@@ -44,11 +45,11 @@ public class Server {
 		}
 	}
 
-	public Message messages() {
+	protected Message messages() {
 		return SMessage;
 	}
 
-	public ArrayList<ClientConnection> getConnectedClients() {
+	protected ArrayList<ClientConnection> getConnectedClients() {
 		return m_connectedClients;
 	}
 
@@ -58,44 +59,58 @@ public class Server {
 		heartBeat = new HeartBeat(this);
 		heartBeat.start();
 	}
-	
+
 	private void ackMessageTrimmer() throws IOException {
 		String[] extractID = getMessage().split("-ID%");
 		String[] temp = extractID[0].split("-name%");
 		String specialID = temp[1];
 		System.out.println("S ACK RECIEVED: " + getMessage());
 		System.out.println("SERVER SPECIALID: " + specialID);
-		SMessage.sendPrivateMessage(specialID+"-ID%"+"-ack%", getSenderName());
-//		SMessage.sendPrivateMessage(messageID + "-ack%", clientName);
+		SMessage.sendPrivateMessage(specialID + "-ID%" + "-ack%", getSenderName());
 		setMessage(getMessage().replace("-ack%", ""));
 	}
-	
+
 	private void setMessage(String string) {
-		myMessy = string;
+		message = string;
 	}
-	
+
 	private String getMessage() {
-		return myMessy;
+		return message;
 	}
-	
+
 	private void setSenderName(String string) {
 		nameOfSender = string;
 	}
-	
+
 	private String getSenderName() {
 		return nameOfSender;
 	}
-	
+
+	private void setDatagramPacket(DatagramPacket pack) {
+		datagramPacket = pack;
+	}
+
+	private DatagramPacket getDatagramPacket() {
+		return datagramPacket;
+	}
+
+	private int getPort() {
+		return getDatagramPacket().getPort();
+	}
+
+	private InetAddress getAddress() {
+		return getDatagramPacket().getAddress();
+	}
 	// Listens for messages and sends the correct type back to the client
 	private void listenForClientMessages() throws IOException {
 		System.out.println("Waiting for client messages... ");
 		do {
 			// Retrieve message from client
-			DatagramPacket dp = SMessage.retrieveMessage();
+			setDatagramPacket(SMessage.retrieveMessage());
 			// Unmarshal message
-			setMessage(SMessage.unmarshalMessage(dp));
+			setMessage(SMessage.unmarshalMessage(getDatagramPacket()));
 			// Retrieve the client name and put inside local string
-			setSenderName(getClientNameFromMessage(getMessage()));
+			setSenderName(getClientNameFromMessage());
 			// Send acknowledgement - message was received
 //			String messageID = getMessageID(getMessage(), getSenderName());
 
@@ -105,7 +120,7 @@ public class Server {
 			// Receive heart beat message
 			if (getMessage().contains("-isAlive%")) {
 				System.out.println(getMessage());
-				SMessage.receiveHeartbeat(dp, getSenderName());
+				SMessage.receiveHeartbeat(getDatagramPacket(), getSenderName());
 			}
 			// Removing key words and messageID from message
 			if (!getMessage().contains("-connection%")) {
@@ -114,77 +129,79 @@ public class Server {
 				setMessage(getMessage().replace("-name%", ""));
 			}
 			// Respond in correct manner
-			decisionBasedOnInput(dp, getMessage(), getSenderName());
+			decisionBasedOnInput();
 		} while (true);
 	}
-	
+
 	// This method returns the unique id that is within the message
 //	private String getMessageID(String message, String name) {
 //		String[] temp = message.split("-ID%");
-//		temp[0] = temp[0].replace("-ack%", "");
+//		temp[0] = temp[0].replace("-ack%", " ");
 //		temp[0] = temp[0].replace(name + "-name%", "");
 //		return temp[0];
 //	}
 
 	// Method that makes decisions based on the input
-	private void decisionBasedOnInput(DatagramPacket datapack, String message, String name) throws IOException {
-		System.out.println(message);
+	private void decisionBasedOnInput() throws IOException {
+		System.out.println(getMessage());
 		// CONNECTED TO SERVER
-		if (message.contains("-connection%")) {
-			addClient(name, datapack.getAddress(), datapack.getPort());
-			if (isConnected(name, datapack.getPort())) {
-				message = message.replace(message, name + " has connected");
+		if (getMessage().contains("-connection%")) {
+			addClient();
+			// is the user connected?
+			if (isConnected()) {
+				setMessage(getMessage().replace(getMessage(), getSenderName() + " has connected"));
 			} else {
-				message = message.replace(message, "User tried to connect but failed");
+				setMessage(getMessage().replace(getMessage(), "User tried to connect but failed"));
 			}
 		}
-		if (message.contains("/join") && !isConnected(name, datapack.getPort())) {
-			message = reconnectClient(message, name, datapack);
+		// is the user trying to reconnect?
+		if (getMessage().contains("/join") && !isConnected()) {
+			reconnectClient();
 		}
 		// Check if sender off message is a connected client
-		if (isConnected(name, datapack.getPort())) {
-			// PRINT LIST OF USERS TO SELF
-			if (message.contains("/list")) {
-				SMessage.printListOfUsers(name);
+		if (isConnected()) {
+			// requesting a list of users
+			if (getMessage().contains("/list")) {
+				System.out.println("TRIED TO /LIST: " + getMessage());
+				SMessage.printListOfUsers(getSenderName());
 			}
-			// SEND PRIVATE MESSAGE TO CLIENT
-			else if (message.contains("/tell ")) {
-				SMessage.messageTell(message, name);
+			// send a private message
+			else if (getMessage().contains("/tell ")) {
+				SMessage.messageTell(getMessage(), getSenderName());
 			}
-			// USER LEAVE CHAT
-			else if (message.contains("/leave")) {
-				SMessage.messageLeave(message, name);
-			} 
+			// is user trying to disconnect?
+			else if (getMessage().contains("/leave")) {
+				SMessage.messageLeave(getMessage(), getSenderName());
+			}
 			// PRINT MESSAGE
 			else {
-				SMessage.broadcast(message);
+				SMessage.broadcast(getMessage());
 			}
 		}
 	}
-	
-	private String getClientNameFromMessage(String message) {
-		message = message.replace("-connection%", "");
-		message = message.replace("-ack%", "");
-		String[] temp1 = message.split("-ID%");
+
+	private String getClientNameFromMessage() {
+		String temp0 = getMessage();
+		temp0 = temp0.replace("-connection%", "");
+		temp0 = temp0.replace("-ack%", "");
+		String[] temp1 = temp0.split("-ID%");
 		String[] temp2 = temp1[0].split("-name%");
 		return temp2[0];
 	}
 
 	// Reconnects disconnected user and returns message for broadcast
-	private String reconnectClient(String message, String name, DatagramPacket dp) {
-		addClient(name, dp.getAddress(), dp.getPort());
-		message = message.replace(message, name + " has reconnected");
-		return message;
+	private void reconnectClient() {
+		addClient();
+		setMessage(getMessage().replace(getMessage(), getSenderName() + " has reconnected"));
 	}
 
 	// Method to for the server to check if the sender is a connected client or not
-	private boolean isConnected(String name, int port) {
+	private boolean isConnected() {
 		ClientConnection c;
-		if (clientsConnected.containsValue(port)) {
+		if (clientsConnected.containsValue(getPort())) {
 			for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 				c = itr.next();
-				if (c.hasName(name)) {
-
+				if (c.hasName(getSenderName())) {
 					return true; // client is connected
 				}
 			}
@@ -192,42 +209,42 @@ public class Server {
 		return false; // client was not connected
 	}
 
-	public DatagramSocket getSocket() {
+	protected DatagramSocket getSocket() {
 		return m_socket;
 	}
 
-	public boolean addClient(String name, InetAddress address, int port) {
+	protected boolean addClient() {
 		ClientConnection c = null;
-		if (!clientsConnected.containsKey(name)) {
-			
-			clientsConnected.put(name, port);
+		if (!clientsConnected.containsKey(getSenderName())) {
+
+			clientsConnected.put(getSenderName(), getPort());
 			for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 				c = itr.next();
-				if (c.hasName(name)) {
+				if (c.hasName(getSenderName())) {
 					return false; // Already exists a client with this name
 				}
 			}
-			c = new ClientConnection(name, address, port);
+			c = new ClientConnection(getSenderName(), getAddress(), getPort());
 			m_connectedClients.add(c);
 			// starts the counter which checks if a value has been updated or not
-			c.isAliveCounter(this, name);
+			c.isAliveCounter(this, getSenderName());
 			return true;
 		}
 		return false;
 	}
 
-	public boolean disconnectClient(String name) throws IOException {
+	protected boolean disconnectClient() throws IOException {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
-			if (c.hasName(name)) {
-				SMessage.broadcast(name + " disconnected");
+			if (c.hasName(getSenderName())) {
+				SMessage.broadcast(getSenderName() + " disconnected");
 				m_connectedClients.remove(c);
 				SMessage.sendPrivateMessage("-socketDC%", c.getName());
 				return true;
 			}
 		}
-		System.out.println("Tried to disconnect " + name + " but client was already disconnected");
+		System.out.println("Tried to disconnect " + getSenderName() + " but client was already disconnected");
 		return false;
 	}
 }
