@@ -3,6 +3,7 @@ package Client;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.UUID;
 
 public class Client implements ActionListener {
@@ -55,8 +56,10 @@ public class Client implements ActionListener {
 	 * TODO
 	 * Make code more readable
 	 * split into functions
+	 * NEED SEPERATE HASHMAP FOR RECEIVER ID'S
 	 */
 	private void listenForServerMessages() throws IOException {
+		HashMap<String, Boolean> receiverMap = new HashMap<>();
 		do {
 			String message = m_connection.receiveChatMessage();
 			// cleaning up incomming message
@@ -85,10 +88,13 @@ public class Client implements ActionListener {
 
 				System.out.println("incomming specialID: " + specialID);
 				System.out.println("incomming(altered): " + message);
+				
 				if (m_connection.getMessageMap().get(specialID)) {
+					
 					System.out.println(specialID + " = " + m_connection.getMessageMap().get(specialID) + " - ignore");
 				}
-				if (!m_connection.getMessageMap().get(specialID)) {
+				if (!m_connection.getMessageMap().get(specialID) || !receiverMap.containsKey(specialID)) {
+					
 					System.out.println(specialID + " = " + m_connection.getMessageMap().get(specialID));
 					if (!(message.contains("-Salive%") || message.contains("-ack%"))
 							|| message.contains("-socketDC%")) {
@@ -106,6 +112,7 @@ public class Client implements ActionListener {
 						m_connection.getMessageMap().put(specialID, true);
 					}
 				}
+				receiverMap.put(specialID, true);
 			}
 		} while (true);
 	}

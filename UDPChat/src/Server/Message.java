@@ -43,10 +43,13 @@ public class Message {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			c = itr.next();
+			// Finds the correct user by looking by finding the combination:
+			// /tell <receiver name>
 			if (message.contains("/tell " + c.getName())) {
 				// RECIPENT MESSAGE
 				message = message.replace("/tell " + c.getName(), "");
 				message = message.replace("->", " whispers ->");
+				System.out.println("messageTell(): " + message + " - - " + c.getName());
 				sendPrivateMessage(message, c.getName());
 				// SENDER MESSAGE
 				message = message.replace(name, "You");
