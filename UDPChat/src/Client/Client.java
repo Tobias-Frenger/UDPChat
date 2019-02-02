@@ -37,7 +37,11 @@ public class Client implements ActionListener {
 			System.exit(-1);
 		}
 	}
-
+	
+	protected ChatGUI getGui() {
+		return m_GUI;
+	}
+	
 	private Client(String userName) {
 		m_name = userName;
 		// Start up GUI (runs in its own thread)

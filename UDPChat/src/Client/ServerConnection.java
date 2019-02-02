@@ -33,7 +33,7 @@ public class ServerConnection {
 	public void setAck(boolean bool) {
 		m_ack = bool;
 	}
-	public boolean getAck()
+	protected boolean getAck()
 	{
 		return m_ack;
 	}
@@ -141,6 +141,7 @@ public class ServerConnection {
 					// stops sending after maxAttempts ->
 					if (attempt == maxAttempts) {
 						System.out.println("max attempts was reached: " + attempt);
+						client.getGui().displayMessage("-:message was not delivered:-");
 						break;
 					}
 				}
