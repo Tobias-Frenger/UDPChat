@@ -78,20 +78,22 @@ public class Message {
 	}
 	
 	public void sendPrivateMessage(String message, String name) throws IOException {
+		setMessage(message);
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			c = itr.next();
 			if (c.hasName(name)) {
-				c.sendMessage(message, server.getSocket());
+				c.sendMessage(getMessage(), server.getSocket());
 			}
 		}
 	}
 
 	public void broadcast(String message) throws IOException {
+		setMessage(message);
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			c = itr.next();
-			c.sendMessage(message, server.getSocket());
+			c.sendMessage(getMessage(), server.getSocket());
 		}
 	}
 
@@ -101,13 +103,15 @@ public class Message {
 	 * uniqueID needs to be sent along with the message
 	 */
 	public void printListOfUsers(String name) throws IOException {
+		String keyWord = "-list%";
+		setSender(name);
 		ClientConnection c;
-		sendPrivateMessage("---Chat room users---", name);
+		sendPrivateMessage("---Chat room users---", getSender());
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			c = itr.next();
-			sendPrivateMessage("        - " + c.getName(), name);
+			sendPrivateMessage("        - " + c.getName(), getSender());
 		}
-		sendPrivateMessage("-----------------------------", name);
+		sendPrivateMessage("-----------------------------", getSender());
 	}
 	
 	public DatagramPacket retrieveMessage() {
@@ -132,6 +136,7 @@ public class Message {
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			c = itr.next();
 			if (message.contains(c.getName())) {
+				System.out.println("HEARTBEAT: " + name);
 				c.clientIsAlive();
 			}
 		}

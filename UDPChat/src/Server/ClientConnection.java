@@ -23,33 +23,37 @@ public class ClientConnection {
 	private final int m_port;
 	private boolean isAlive = false;
 
-	public ClientConnection(String name, InetAddress address, int port) {
+	protected ClientConnection(String name, InetAddress address, int port) {
 		m_name = name;
 		m_address = address;
 		m_port = port;
 		System.out.println("NEW CONNECTION: " + name);
 	}
 
-	public void clientIsAlive() {
+	protected void clientIsAlive() {
 		isAlive = true;
+		System.out.println("CLIENT IS ALIVE " + isAlive);
 	}
 	
 	// Checks if the client is still alive.
 	// disconnects client otherwise
-	public void isAliveCounter(Server server, String name) {
+	protected void isAliveCounter(Server server, String name) {
 		Thread thread = new Thread() {
 			
 			@Override
 			public void run() {
 				String clientName = name;
 				int sleepInMs = 3000;
+				
 				while (true) {
-					System.out.println("Server-side: " + clientName + " is alive");
+					System.out.println("Server-side: " + name + " is alive");
 					try {
 						sleep(sleepInMs);
 						if (isAlive) {
+							System.out.println("AAAAAAA ALIVE = " + isAlive);
 							isAlive = false;
 						} else {
+							System.out.println("AAAAAAA ALIVE = " + isAlive);
 							System.out.println("Disconnecting " + clientName);
 							server.disconnectClient();
 							break;
@@ -68,7 +72,7 @@ public class ClientConnection {
 	 * TODO
 	 * Implement atleast-once solution
 	 */
-	public void sendMessage(String message, DatagramSocket socket) throws IOException {
+	protected void sendMessage(String message, DatagramSocket socket) throws IOException {
 		System.out.println("[SERVER] sendMessage() - " + message);
 		// artificially produces loss of messages
 		Random generator = new Random();
@@ -84,11 +88,11 @@ public class ClientConnection {
 		}
 	}
 
-	public String getName() {
+	protected String getName() {
 		return m_name;
 	}
 
-	public boolean hasName(String testName) {
+	protected boolean hasName(String testName) {
 		return testName.equals(m_name);
 	}
 

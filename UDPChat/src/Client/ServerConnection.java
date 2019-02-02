@@ -10,7 +10,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -30,7 +29,6 @@ public class ServerConnection {
 	private boolean m_ack = false;
 	
 	static HashMap<String, Boolean> messageMap = new HashMap<String, Boolean>();
-	private ArrayList<String> threadID = new ArrayList<>();
 	
 	public void setAck(boolean bool) {
 		m_ack = bool;
@@ -54,7 +52,7 @@ public class ServerConnection {
 		heartBeat = bool;
 	}
 
-	public boolean hasHeartBeat() {
+	public boolean getHeartBeat() {
 		return heartBeat;
 	}
 
@@ -65,7 +63,7 @@ public class ServerConnection {
 	public boolean handshake(String name) throws IOException {
 		sendChatMessage(name);
 		receiveChatMessage();
-		new HeartBeat(this, client).start();
+		new HeartBeat(client).start();
 		// * return false if connection failed (e.g., if user name was taken)
 		return true;
 	}
@@ -76,7 +74,6 @@ public class ServerConnection {
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		m_socket.receive(packet);
 		// unMarshalling message:
-		
 		String message = new String(packet.getData(), 0, packet.getLength());
 		return message;
 	}

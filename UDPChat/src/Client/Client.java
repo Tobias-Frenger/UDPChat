@@ -53,15 +53,13 @@ public class Client implements ActionListener {
 		}
 	}
 
-	
 	/*
-	 * TODO
-	 * fix /join - similar to /leave
+	 * TODO fix /join - similar to /leave
 	 */
 	// extracting the special id from the message
 	// removing unnecessary information from message
 	private void messageTrimmer() {
-		if (!getMessage().contains("-leave%")) {
+		if (!getMessage().contains("-leave%") && !getMessage().contains("-reconnect%")) {
 			String[] extractID = getMessage().split("-ID%");
 			String idtemp[] = extractID[0].split(" -> ");
 			idtemp[1] = idtemp[1].replace("-ID%", "");
@@ -69,15 +67,25 @@ public class Client implements ActionListener {
 			setSpecialID(temp[1]);
 			setMessage(getMessage().replace(getSpecialID(), ""));
 			setMessage(getMessage().replace("-ID%", ""));
-		} else {
+			// leave message
+		} else if (getMessage().contains("-leave%")) {
 			String[] extractID = getMessage().split("-ID%");
 			String[] temp = extractID[0].split(" final note: ");
 			setSpecialID(temp[1]);
 			setMessage(getMessage().replace(temp[1] + "-ID%", ""));
 			setMessage(getMessage().replace("-leave%", ""));
-		}
+			// reconnect message
+		} else if (getMessage().contains("-reconnect%")) {
+			String[] extractID = getMessage().split("-reconnect%");
+			setSpecialID(extractID[1]);
+			setMessage(getMessage().replace(getSpecialID(), ""));
+			if (!getConnection().getHeartBeat()) {
+				getConnection().setHeartBeat(true);
+				new HeartBeat(this).start();
+			}
+			System.out.println("JOIN ATTEMPT: " + getMessage());
+		} 
 	}
-	
 
 	private void ackMessageTrimmer() {
 		System.out.println("MESSAGE C ACK PRE: " + getMessage());
@@ -97,10 +105,9 @@ public class Client implements ActionListener {
 		m_connection.getSocket().close();
 		m_connection.getSocket().disconnect();
 	}
-	
+
 	/*
-	 * TODO
-	 * implement /leave check with keyword
+	 * TODO implement /join check with keyword
 	 */
 	private void listenForServerMessages() throws IOException {
 		// Key = UUID.toString, Value = boolean set to false
@@ -132,7 +139,7 @@ public class Client implements ActionListener {
 
 						receiverMap.put(getSpecialID(), true);
 					}
-					System.out.println(" - 3 map VALUE: " + receiverMap.get(getSpecialID()));
+					System.out.println(" - 3 Map VALUE: " + receiverMap.get(getSpecialID() + " - " + getMessage()));
 				}
 				if (receiverMap.containsKey(getSpecialID())) {
 					if (receiverMap.get(getSpecialID())) {
@@ -151,11 +158,6 @@ public class Client implements ActionListener {
 				receiverMap.put(getSpecialID(), true);
 			}
 		} while (true);
-	}
-
-	// TODO send unique keyword from Server in order to detect this type
-	private void trimFinalNote() {
-		setMessage(getMessage().replaceAll(getSpecialID() + "-ID%", ""));
 	}
 
 	private String getSpecialID() {

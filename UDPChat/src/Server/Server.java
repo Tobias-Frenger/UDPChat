@@ -28,6 +28,7 @@ public class Server {
 	private Message SMessage = new Message(this);
 	private HeartBeat heartBeat;
 	private String message = "";
+	private String messageID = "";
 	private String nameOfSender = "";
 	private DatagramPacket datagramPacket;
 
@@ -70,37 +71,6 @@ public class Server {
 		setMessage(getMessage().replace("-ack%", ""));
 	}
 
-	private void setMessage(String string) {
-		message = string;
-	}
-
-	private String getMessage() {
-		return message;
-	}
-
-	private void setSenderName(String string) {
-		nameOfSender = string;
-	}
-
-	private String getSenderName() {
-		return nameOfSender;
-	}
-
-	private void setDatagramPacket(DatagramPacket pack) {
-		datagramPacket = pack;
-	}
-
-	private DatagramPacket getDatagramPacket() {
-		return datagramPacket;
-	}
-
-	private int getPort() {
-		return getDatagramPacket().getPort();
-	}
-
-	private InetAddress getAddress() {
-		return getDatagramPacket().getAddress();
-	}
 	// Listens for messages and sends the correct type back to the client
 	private void listenForClientMessages() throws IOException {
 		System.out.println("Waiting for client messages... ");
@@ -116,10 +86,11 @@ public class Server {
 
 			if (getMessage().contains("-ack%")) {
 				ackMessageTrimmer();
+				getMessageIDFromMessage(getMessage(), getSenderName());
 			}
 			// Receive heart beat message
 			if (getMessage().contains("-isAlive%")) {
-				System.out.println(getMessage());
+				System.out.println("()Server detect: " + getMessage());
 				SMessage.receiveHeartbeat(getDatagramPacket(), getSenderName());
 			}
 			// Removing key words and messageID from message
@@ -129,17 +100,23 @@ public class Server {
 				setMessage(getMessage().replace("-name%", ""));
 			}
 			// Respond in correct manner
-			decisionBasedOnInput();
+			if (!getMessage().contains("-isAlive%")) {
+				decisionBasedOnInput();
+			}
 		} while (true);
 	}
 
-	// This method returns the unique id that is within the message
-//	private String getMessageID(String message, String name) {
-//		String[] temp = message.split("-ID%");
-//		temp[0] = temp[0].replace("-ack%", " ");
-//		temp[0] = temp[0].replace(name + "-name%", "");
-//		return temp[0];
-//	}
+	private String getMessageIDFromMessage(String message, String name) {
+		String[] temp = message.split("-ID%");
+		temp[0] = temp[0].replace("-ack%", " ");
+		temp[0] = temp[0].replace(name + "-name%", "");
+		messageID = temp[0];
+		return temp[0];
+	}
+
+	private String getMessageID() {
+		return messageID;
+	}
 
 	// Method that makes decisions based on the input
 	private void decisionBasedOnInput() throws IOException {
@@ -180,6 +157,9 @@ public class Server {
 		}
 	}
 
+	// This method needs to be implemented
+	// after the message is received for
+	// the first time.
 	private String getClientNameFromMessage() {
 		String temp0 = getMessage();
 		temp0 = temp0.replace("-connection%", "");
@@ -190,9 +170,11 @@ public class Server {
 	}
 
 	// Reconnects disconnected user and returns message for broadcast
-	private void reconnectClient() {
+	private void reconnectClient() throws IOException {
+		setMessage(getMessage().replace(getMessage(),
+				getSenderName() + " has reconnected" + "-reconnect%" + getMessageID() + "-ID%"));
 		addClient();
-		setMessage(getMessage().replace(getMessage(), getSenderName() + " has reconnected"));
+		System.out.println("--RECONNECT MESSAGE: " + getMessage());
 	}
 
 	// Method to for the server to check if the sender is a connected client or not
@@ -209,23 +191,21 @@ public class Server {
 		return false; // client was not connected
 	}
 
-	protected DatagramSocket getSocket() {
-		return m_socket;
-	}
-
 	protected boolean addClient() {
 		ClientConnection c = null;
 		if (!clientsConnected.containsKey(getSenderName())) {
-
-			clientsConnected.put(getSenderName(), getPort());
+			
 			for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 				c = itr.next();
 				if (c.hasName(getSenderName())) {
+					System.out.println("CLIENT EXISTS");
 					return false; // Already exists a client with this name
 				}
 			}
 			c = new ClientConnection(getSenderName(), getAddress(), getPort());
 			m_connectedClients.add(c);
+			clientsConnected.put(getSenderName(), getPort());
+			System.out.println(":::: " + getSenderName() + " WAS ADDED");
 			// starts the counter which checks if a value has been updated or not
 			c.isAliveCounter(this, getSenderName());
 			return true;
@@ -237,14 +217,54 @@ public class Server {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
+			// disconnect
 			if (c.hasName(getSenderName())) {
 				SMessage.broadcast(getSenderName() + " disconnected");
 				m_connectedClients.remove(c);
+				clientsConnected.remove(getSenderName());
 				SMessage.sendPrivateMessage("-socketDC%", c.getName());
 				return true;
 			}
 		}
 		System.out.println("Tried to disconnect " + getSenderName() + " but client was already disconnected");
 		return false;
+	}
+
+	// Setter methods
+	private void setMessage(String string) {
+		message = string;
+	}
+
+	private void setSenderName(String string) {
+		nameOfSender = string;
+	}
+
+	private void setDatagramPacket(DatagramPacket pack) {
+		datagramPacket = pack;
+	}
+
+	// Getter methods
+	private String getMessage() {
+		return message;
+	}
+
+	private String getSenderName() {
+		return nameOfSender;
+	}
+
+	private DatagramPacket getDatagramPacket() {
+		return datagramPacket;
+	}
+
+	private int getPort() {
+		return getDatagramPacket().getPort();
+	}
+
+	private InetAddress getAddress() {
+		return getDatagramPacket().getAddress();
+	}
+
+	protected DatagramSocket getSocket() {
+		return m_socket;
 	}
 }

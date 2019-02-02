@@ -14,11 +14,9 @@ import java.net.DatagramPacket;
 
 public class HeartBeat extends Thread {
 	private int sleepTimeInMs = 1000;
-	private ServerConnection serverConnection;
 	private Client client;
 
-	public HeartBeat(ServerConnection serverConnection, Client client) {
-		this.serverConnection = serverConnection;
+	public HeartBeat(Client client) {
 		this.client = client;
 	}
 	
@@ -26,15 +24,16 @@ public class HeartBeat extends Thread {
 	public void run() {
 		String name = client.getName();
 		String message = name + "-isAlive%";
-		while (serverConnection.hasHeartBeat()) {
+		while (client.getConnection().getHeartBeat()) {
 			try {
 				DatagramPacket packet = new DatagramPacket(
 							message.getBytes(), 
 							message.getBytes().length,
-							serverConnection.getAddress(), 
-							serverConnection.getPort()
+							client.getConnection().getAddress(), 
+							client.getConnection().getPort()
 						);
-				serverConnection.getSocket().send(packet);
+				client.getConnection().getSocket().send(packet);
+				System.out.println(client.getConnection().getHeartBeat());
 				sleep(sleepTimeInMs);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
