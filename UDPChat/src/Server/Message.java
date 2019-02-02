@@ -3,6 +3,7 @@ package Server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.util.Iterator;
+import java.util.UUID;
 
 /*
  * This class handles multiple message types.
@@ -18,24 +19,25 @@ public class Message {
 	protected Message(Server server) {
 		this.server = server;
 	}
-	
+
 	private void setSender(String string) {
 		senderOfMessageName = string;
 	}
-	
+
 	private String getSender() {
 		return senderOfMessageName;
 	}
-	
+
 	private void setMessage(String string) {
 		message = string;
 	}
-	
+
 	private String getMessage() {
 		return message;
 	}
-	
-	// Message that the server sends to the client(s) after receiving a /leave message
+
+	// Message that the server sends to the client(s) after receiving a /leave
+	// message
 	public void messageLeave(String message, String name) throws IOException {
 		setSender(name);
 		setMessage(message);
@@ -46,11 +48,9 @@ public class Message {
 		}
 		server.disconnectClient();
 	}
-	
+
 	/*
-	 * TODO
-	 * Fix on client side.
-	 * Messages not output to GUI.
+	 * TODO Fix on client side. Messages not output to GUI.
 	 */
 	// Message that the server sends out when a client sends a /tell message
 	public void messageTell(String message, String name) throws IOException {
@@ -60,7 +60,7 @@ public class Message {
 		String recipentName = "";
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			// Finds the correct user by looking by finding the combination:
-						// /tell <receiver name>
+			// /tell <receiver name>
 			c = itr.next();
 			recipentName = c.getName();
 			if (getMessage().contains("/tell " + recipentName)) {
@@ -76,7 +76,7 @@ public class Message {
 			}
 		}
 	}
-	
+
 	public void sendPrivateMessage(String message, String name) throws IOException {
 		setMessage(message);
 		ClientConnection c;
@@ -98,22 +98,27 @@ public class Message {
 	}
 
 	/*
-	 * TODO
-	 * Fix method to send message instead of name
-	 * uniqueID needs to be sent along with the message
+	 * TODO Fix method to send message instead of name uniqueID needs to be sent
+	 * along with the message
 	 */
-	public void printListOfUsers(String name) throws IOException {
+	public void printListOfUsers(String name, String message) throws IOException {
 		String keyWord = "-list%";
+		setMessage(message);
 		setSender(name);
+		// new specialID is required for every message sent to the client
+		String newID;
+		System.out.println("PRINTING LIST MESSAGE: " + getMessage());
 		ClientConnection c;
-		sendPrivateMessage("---Chat room users---", getSender());
+		sendPrivateMessage("---Chat room users---" + keyWord + getMessage(), getSender());
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			c = itr.next();
-			sendPrivateMessage("        - " + c.getName(), getSender());
+			newID = UUID.randomUUID().toString();
+			sendPrivateMessage("        - " + c.getName() + keyWord + newID + "-ID%", getSender());
 		}
-		sendPrivateMessage("-----------------------------", getSender());
+		newID = UUID.randomUUID().toString();
+		sendPrivateMessage("-----------------------------" + keyWord + newID + "-ID%", getSender());
 	}
-	
+
 	public DatagramPacket retrieveMessage() {
 		byte[] messageByte = new byte[1024];
 		DatagramPacket dp = new DatagramPacket(messageByte, messageByte.length);

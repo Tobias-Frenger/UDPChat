@@ -30,6 +30,10 @@ public class ClientConnection {
 		System.out.println("NEW CONNECTION: " + name);
 	}
 
+	protected boolean getIsAlive() {
+		return isAlive;
+	}
+	
 	protected void clientIsAlive() {
 		isAlive = true;
 		System.out.println("CLIENT IS ALIVE " + isAlive);
@@ -71,6 +75,7 @@ public class ClientConnection {
 	/*
 	 * TODO
 	 * Implement atleast-once solution
+	 * research why -Salive% is being sent to disconnected users.
 	 */
 	protected void sendMessage(String message, DatagramSocket socket) throws IOException {
 		System.out.println("[SERVER] sendMessage() - " + message);

@@ -19,7 +19,7 @@ import java.util.Random;
  */
 public class ServerConnection {
 	// Artificial failure rate of 30% packet loss
-	static double TRANSMISSION_FAILURE_RATE = 0.0;
+	static double TRANSMISSION_FAILURE_RATE = 0.3;
 
 	private DatagramSocket m_socket = null;
 	private InetAddress m_serverAddress = null;

@@ -6,8 +6,18 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 
+/*
+ * This class receives messages from the server
+ * list of keywords:
+ * -ack%		- acknowledgement sent from the server back to the client
+ * -sack%		- acknowledgement sent from the client back to the server
+ * -name%		- makes it easy to extract the client name from the message
+ * -ID%			- enables extraction of the unique id sent by the client/server
+ * -connection%	- used to detect connection messages
+ * -reconnect%	- used to detect when a client wants to reconnect
+ * -leave%		- used to detect when a client wants to leave the chat room
+ */
 public class Client implements ActionListener {
-	// TEST COMMENT COMMIT
 	private String m_name = null;
 	private final ChatGUI m_GUI;
 	private ServerConnection m_connection = null;
@@ -60,7 +70,10 @@ public class Client implements ActionListener {
 	// removing unnecessary information from message
 	private void messageTrimmer() {
 		System.out.println("ms0 " + getMessage());
-		if (!getMessage().contains("-leave%") && !getMessage().contains("-reconnect%") && !getMessage().contains("-connection%")) {
+		if (!getMessage().contains("-leave%") 
+				&& !getMessage().contains("-reconnect%")
+				&& !getMessage().contains("-connection%") 
+				&& !getMessage().contains("-list%")) {
 			System.out.println("ms1 " + getMessage());
 			String[] extractID = getMessage().split("-ID%");
 			String idtemp[] = extractID[0].split(" -> ");
@@ -94,11 +107,13 @@ public class Client implements ActionListener {
 			String[] temp = extractID[1].split(getName());
 			String[] temp1 = temp[0].split("-ID%");
 			setSpecialID(temp1[0]);
-			setMessage(getMessage().replace(
-					"-connection%" 
-					+getSpecialID()
-					+"-ID%"
-					,""));
+			setMessage(getMessage().replace("-connection%" + getSpecialID() + "-ID%", ""));
+		} else if (getMessage().contains("-list%")) {
+			System.out.println("ms5 " + getMessage());
+			String[] extractID = getMessage().split("-list%");
+			String[] temp = extractID[1].split("-ID%");
+			setSpecialID(temp[0]);
+			setMessage(getMessage().replaceAll("-list%" + getSpecialID() + "-ID%", ""));
 		}
 	}
 
@@ -121,9 +136,6 @@ public class Client implements ActionListener {
 		m_connection.getSocket().disconnect();
 	}
 
-	/*
-	 * TODO implement /join check with keyword
-	 */
 	private void listenForServerMessages() throws IOException {
 		// Key = UUID.toString, Value = boolean set to false
 		HashMap<String, Boolean> receiverMap = new HashMap<>();
@@ -163,8 +175,10 @@ public class Client implements ActionListener {
 					System.out.println(" - 3 Map VALUE: " + receiverMap.get(getSpecialID()));
 				}
 				if (receiverMap.containsKey(getSpecialID())) {
-					if (receiverMap.get(getSpecialID()) && messageDisplayNRMap.get(getMessage() + getSpecialID()) == 0) {
-						messageDisplayNRMap.put(getMessage() + getSpecialID(), messageDisplayNRMap.get(getMessage() + getSpecialID()) + 1);
+					if (receiverMap.get(getSpecialID())
+							&& messageDisplayNRMap.get(getMessage() + getSpecialID()) == 0) {
+						messageDisplayNRMap.put(getMessage() + getSpecialID(),
+								messageDisplayNRMap.get(getMessage() + getSpecialID()) + 1);
 						System.out.println(" -% " + getMessage());
 						System.out.println(getSpecialID() + " = " + m_connection.getMessageMap().get(getSpecialID()));
 						if (!(getMessage().contains("-Salive%") || getMessage().contains("-ack%"))

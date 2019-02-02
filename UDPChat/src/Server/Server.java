@@ -137,8 +137,9 @@ public class Server {
 		if (isConnected()) {
 			// requesting a list of users
 			if (getMessage().contains("/list")) {
-				System.out.println("TRIED TO /LIST: " + getMessage());
-				SMessage.printListOfUsers(getSenderName());
+				setMessage(getMessage().replace(getSenderName() + " -> ", ""));
+				setMessage(getMessage().replace("/list", ""));
+				SMessage.printListOfUsers(getSenderName(), getMessage());
 			}
 			// send a private message
 			else if (getMessage().contains("/tell ")) {

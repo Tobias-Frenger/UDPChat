@@ -12,14 +12,14 @@ import java.util.Iterator;
  * @author a16tobfr
  */
 
-public class HeartBeat extends Thread{
+public class HeartBeat extends Thread {
 	private int sleepTimeInMs = 1000;
 	private Server server;
-	
+
 	public HeartBeat(Server server) {
 		this.server = server;
 	}
-	
+
 	@Override
 	public void run() {
 		String message = "-Salive%";
@@ -28,7 +28,9 @@ public class HeartBeat extends Thread{
 				ClientConnection c = null;
 				for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 					c = itr.next();
-					server.messages().sendPrivateMessage(message, c.getName());
+					if (c.getIsAlive()) {
+						server.messages().sendPrivateMessage(message, c.getName());
+					}
 				}
 				sleep(sleepTimeInMs);
 			} catch (InterruptedException e) {
