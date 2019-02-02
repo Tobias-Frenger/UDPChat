@@ -96,9 +96,7 @@ public class Server {
 			// Removing key words and messageID from message
 			if (!getMessage().contains("-connection%")) {
 				setMessage(getMessage().replace("-name%", " -> "));
-			} else {
-				setMessage(getMessage().replace("-name%", ""));
-			}
+			} 
 			// Respond in correct manner
 			if (!getMessage().contains("-isAlive%")) {
 				decisionBasedOnInput();
@@ -126,7 +124,7 @@ public class Server {
 			addClient();
 			// is the user connected?
 			if (isConnected()) {
-				setMessage(getMessage().replace(getMessage(), getSenderName() + " has connected"));
+				setMessage(getMessage().replace(getMessage(), getSenderName() + " has connected" + "-connection%" + getMessageID() + "-ID%"));
 			} else {
 				setMessage(getMessage().replace(getMessage(), "User tried to connect but failed"));
 			}
