@@ -241,11 +241,17 @@ public class Server {
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			// disconnect
+			System.out.println(getSenderName());
 			if (c.hasName(getSenderName())) {
+				System.out.println(getSenderName() + " disconnected" + "-disconnect%" + getMessageID() + "-ID%");
 				SMessage.broadcast(getSenderName() + " disconnected" + "-disconnect%" + getMessageID() + "-ID%");
 				m_connectedClients.remove(c);
 				clientsConnected.remove(getSenderName());
 				SMessage.sendPrivateMessage("-socketDC%", c.getName());
+				if (m_connectedClients.contains(c.getName())) {
+					m_connectedClients.remove(c);
+					System.out.println("STILL EXISTS!!!");
+				}
 				return true;
 			}
 		}
@@ -257,7 +263,7 @@ public class Server {
 		message = string;
 	}
 
-	private void setSenderName(String string) {
+	protected void setSenderName(String string) {
 		nameOfSender = string;
 	}
 

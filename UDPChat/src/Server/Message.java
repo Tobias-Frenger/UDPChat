@@ -138,6 +138,7 @@ public class Message {
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			c = itr.next();
 			if (message.contains(c.getName())) {
+				System.out.println(c.getName() + " is alive");
 				c.clientIsAlive();
 			}
 		}
