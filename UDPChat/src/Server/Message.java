@@ -2,6 +2,7 @@ package Server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -66,7 +67,7 @@ public class Message {
 			if (getMessage().contains("/tell " + recipentName)) {
 				// RECIPENT MESSAGE
 				setMessage(getMessage().replace("/tell " + c.getName(), ""));
-				setMessage(getMessage().replace("->", " whispers ->"));
+				setMessage(getMessage().replace(" -> ", " whispers ->"));
 				System.out.println("messageTell(): " + getMessage() + " - - " + c.getName());
 				sendPrivateMessage(getMessage(), c.getName());
 				// SENDER MESSAGE
@@ -103,20 +104,31 @@ public class Message {
 	 */
 	public void printListOfUsers(String name, String message) throws IOException {
 		String keyWord = "-list%";
+		String top = "---Chat room users---";
+		String bot = "\n-----------------------------";
+		String nameRow = "        - ";
+		String result;
 		setMessage(message);
 		setSender(name);
 		// new specialID is required for every message sent to the client
 		String newID;
 		System.out.println("PRINTING LIST MESSAGE: " + getMessage());
+		ArrayList<String> names = new ArrayList<>();
 		ClientConnection c;
-		sendPrivateMessage("---Chat room users---" + keyWord + getMessage(), getSender());
+//		sendPrivateMessage("---Chat room users---" + keyWord + getMessage(), getSender());
 		for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 			c = itr.next();
+			names.add(nameRow + c.getName());
 			newID = UUID.randomUUID().toString();
-			sendPrivateMessage("        - " + c.getName() + keyWord + newID + "-ID%", getSender());
+//			sendPrivateMessage("        - " + c.getName() + keyWord + newID + "-ID%", getSender());
 		}
+		result = top;
+		for (int i = 0; i < names.size(); i++) {
+			result += ("\n" + names.get(i));
+		}
+		result += bot;
 		newID = UUID.randomUUID().toString();
-		sendPrivateMessage("-----------------------------" + keyWord + newID + "-ID%", getSender());
+		sendPrivateMessage(result + keyWord + getMessage(), getSender());
 	}
 
 	public DatagramPacket retrieveMessage() {

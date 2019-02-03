@@ -31,7 +31,7 @@ public class Server {
 	private String messageID = "";
 	private String nameOfSender = "";
 	private DatagramPacket datagramPacket;
-
+	
 	public static void main(String[] args) throws IOException {
 		if (args.length < 1) {
 			System.err.println("Usage: java Server portnumber");
@@ -65,42 +65,83 @@ public class Server {
 		String[] extractID = getMessage().split("-ID%");
 		String[] temp = extractID[0].split("-name%");
 		String specialID = temp[1];
-		System.out.println("S ACK RECIEVED: " + getMessage());
-		System.out.println("SERVER SPECIALID: " + specialID);
-		SMessage.sendPrivateMessage(specialID + "-ID%" + "-ack%", getSenderName());
+		System.out.println("client sent ack to me: " + getMessage());
+		System.out.println("ack SERVER SPECIALID: " + specialID);
+		SMessage.sendPrivateMessage(getMessage(), getSenderName());
 		setMessage(getMessage().replace("-ack%", ""));
+	}
+
+	private void setMessageID(String string) {
+		messageID = string;
+	}
+
+	private void serverAckMessageTrimmer() {
+		System.out.println("1 - SERVER ACK MESSAGE TRIMMER: " + getMessage());
+		// get name
+		String[] temp0 = getMessage().split("-sack%");
+		setSenderName(temp0[0]);
+		// get id
+		String[] temp1 = temp0[1].split("-ID%");
+		setMessageID(temp1[0]);
+		setMessage(getMessage().replace(getMessage(), "-sack%"));
+		System.out.println("2 - SERVER ACK MESSAGE TRIMMER: " + getMessage());
+	}
+
+	private void setAckReceived() {
+		ClientConnection c;
+		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+			c = itr.next();
+			if (c.hasName(getSenderName())) {
+				System.out.println(getSenderName());
+				System.out.println(c.getName() + " HAS SENT ACK TO SERVER");
+				c.setAck(false);
+			}
+		}
 	}
 
 	// Listens for messages and sends the correct type back to the client
 	private void listenForClientMessages() throws IOException {
+		// key = UUID.toString, value = message
+		HashMap<String, String> alreadyHandledMap = new HashMap<>();
 		System.out.println("Waiting for client messages... ");
 		do {
+//			if(alreadyHandledMap.containsKey(key))
 			// Retrieve message from client
 			setDatagramPacket(SMessage.retrieveMessage());
 			// Unmarshal message
 			setMessage(SMessage.unmarshalMessage(getDatagramPacket()));
+			// Check if message is an acknowledgement
+			if (getMessage().contains("-sack%")) {
+				System.out.println("------SACK%: " + getMessage());
+				serverAckMessageTrimmer();
+				setAckReceived();
+			}
 			// Retrieve the client name and put inside local string
-			setSenderName(getClientNameFromMessage());
-			// Send acknowledgement - message was received
+				// Send acknowledgement - message was received
 //			String messageID = getMessageID(getMessage(), getSenderName());
-
-			if (getMessage().contains("-ack%")) {
-				ackMessageTrimmer();
-				getMessageIDFromMessage(getMessage(), getSenderName());
-			}
-			// Receive heart beat message
-			if (getMessage().contains("-isAlive%")) {
-				System.out.println("()Server detect: " + getMessage());
-				SMessage.receiveHeartbeat(getDatagramPacket(), getSenderName());
-			}
-			// Removing key words and messageID from message
-			if (!getMessage().contains("-connection%")) {
-				setMessage(getMessage().replace("-name%", " -> "));
-			} 
-			// Respond in correct manner
-			if (!getMessage().contains("-isAlive%")) {
-				decisionBasedOnInput();
-			}
+				if (getMessage().contains("-ack%")) {
+					ackMessageTrimmer();
+					getMessageIDFromMessage(getMessage(), getSenderName());
+				}
+				if (!getMessage().contains("-sack%")) {
+					setSenderName(getClientNameFromMessage());
+				if (!alreadyHandledMap.containsKey(messageID) || getMessage().contains("-isAlive%")) {
+					alreadyHandledMap.put(getMessageID(),getMessage());
+					// Receive heart beat message
+					if (getMessage().contains("-isAlive%")) {
+						System.out.println("()Server detect: " + getMessage());
+						SMessage.receiveHeartbeat(getDatagramPacket(), getSenderName());
+					}
+					// Removing key words and messageID from message
+					if (!getMessage().contains("-connection%")) {
+						setMessage(getMessage().replace("-name%", " -> "));
+					}
+					// Respond in correct manner
+					if (!getMessage().contains("-isAlive%")) {
+						decisionBasedOnInput();
+					}
+				}
+				}
 		} while (true);
 	}
 
@@ -124,7 +165,8 @@ public class Server {
 			addClient();
 			// is the user connected?
 			if (isConnected()) {
-				setMessage(getMessage().replace(getMessage(), getSenderName() + " has connected" + "-connection%" + getMessageID() + "-ID%"));
+//				setMessage(getMessage().replace(getMessage(),
+//						getSenderName() + " has connected" + "-connection%" + getMessageID() + "-ID%"));
 			} else {
 				setMessage(getMessage().replace(getMessage(), "User tried to connect but failed"));
 			}
@@ -193,7 +235,7 @@ public class Server {
 	protected boolean addClient() {
 		ClientConnection c = null;
 		if (!clientsConnected.containsKey(getSenderName())) {
-			
+
 			for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 				c = itr.next();
 				if (c.hasName(getSenderName())) {
@@ -218,7 +260,8 @@ public class Server {
 			c = itr.next();
 			// disconnect
 			if (c.hasName(getSenderName())) {
-				SMessage.broadcast(getSenderName() + " disconnected");
+				System.out.println("DISCONNECT CLIENT:; " + getMessage());
+				SMessage.broadcast(getSenderName() + " disconnected" + "-disconnect%" + getMessageID() + "-ID%");
 				m_connectedClients.remove(c);
 				clientsConnected.remove(getSenderName());
 				SMessage.sendPrivateMessage("-socketDC%", c.getName());

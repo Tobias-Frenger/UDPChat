@@ -108,12 +108,13 @@ public class ServerConnection {
 		String uniqueID = retrieveUniqueID(message);
 //		threadID.add(uniqueID);
 //		messageMap.put(uniqueID, false);
-		System.out.println("[client] uniqueID sent: " + uniqueID);
+		System.out.println("[client] uniqueID passed with message: " + uniqueID);
+		System.out.println("[client]  " + message);
 		Thread thread = new Thread() {
 			String threadMessageID = uniqueID;
-			int sleepInMs = 110;
 			// maxAttempts:
 			// log(10^6)/log(TRANSMISSION_FAILURE_RATE)
+			int sleepInMs = 110;
 			int maxAttempts = 12;
 			int attempt = 0;
 			
@@ -128,6 +129,9 @@ public class ServerConnection {
 							if (message.contains("/leave")) {
 								setHeartBeat(false);
 							}
+							if (message.contains("-sack%")) {
+								setAck(true);
+							}
 							DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length,
 									m_serverAddress, m_serverPort);
 							m_socket.send(packet);
@@ -141,13 +145,12 @@ public class ServerConnection {
 					// stops sending after maxAttempts ->
 					if (attempt == maxAttempts) {
 						System.out.println("max attempts was reached: " + attempt);
-						client.getGui().displayMessage("-:message was not delivered:-");
 						break;
 					}
 				}
 				setAck(false);
 				System.out.println("[clientEndSend]" + threadMessageID + " = " + messageMap.get(threadMessageID));
-				System.out.println("sendAtleastOnce() - Thread ending");
+				System.out.println("[client]sendAtleastOnce() - Thread ending");
 			}
 		};
 		thread.start();

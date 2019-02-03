@@ -15,7 +15,6 @@ import java.net.DatagramPacket;
 public class HeartBeat extends Thread {
 	private int sleepTimeInMs = 1000;
 	private Client client;
-
 	public HeartBeat(Client client) {
 		this.client = client;
 	}
