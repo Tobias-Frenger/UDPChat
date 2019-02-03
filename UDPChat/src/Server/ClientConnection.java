@@ -61,7 +61,6 @@ public class ClientConnection {
 						if (isAlive) {
 							isAlive = false;
 						} else {
-							System.out.println("disconnecting " + m_name);
 							server.setSenderName(m_name);
 							server.disconnectClient();
 							break;
