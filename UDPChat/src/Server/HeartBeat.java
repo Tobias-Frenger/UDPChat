@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /*
- * This is an implementation of the heartbeat
+ * This is an implementation of the heart-beat
  * algorithm which is used by the server in order
  * let the client know that the server is up
  * and running

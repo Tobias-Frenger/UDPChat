@@ -15,8 +15,12 @@ import java.util.UUID;
  * -ID%			- enables extraction of the unique id sent by the client/server
  * -connection%	- used to detect connection messages
  * -reconnect%	- used to detect when a client wants to reconnect
- * -leave%		- used to detect when a client wants to leave the chat room
+ * -disconnect% - keyword that is received when a client leaves
+ * -leave%		- used to detect when a client wants to leave the chat room (only sent to server)
+ * -ignore%		- makes it so the message can be ignored by the rest of the listener method
+ * -isAlive%	- sent by heart-beat algorithms
  */
+
 public class Client implements ActionListener {
 	private String m_name = null;
 	private final ChatGUI m_GUI;
@@ -48,11 +52,11 @@ public class Client implements ActionListener {
 		m_GUI = new ChatGUI(this, m_name);
 	}
 
-	public ServerConnection getConnection() {
+	protected ServerConnection getConnection() {
 		return m_connection;
 	}
 
-	public String getName() {
+	protected String getName() {
 		return m_name;
 	}
 
@@ -67,28 +71,8 @@ public class Client implements ActionListener {
 		}
 	}
 
-	/*
-	 * TODO fix /join - similar to /leave
-	 */
-	// extracting the special id from the message
-	// removing unnecessary information from message
-//	private void ackMessageTrimmer() {
-//		System.out.println("MESSAGE C ACK PRE: " + getMessage());
-//		if (getMessage().contains("-sack%")) {
-//			setMessage(getMessage().replace("-sack%", ""));
-//		}
-//		if (getMessage().contains("/list")) {
-//			setMessage(getMessage().replace("/list", "-ignore%"));
-//		}
-//		String[] temp = getMessage().split("-ID%");
-//		setSpecialID(temp[0]);
-//		setMessage(getMessage().replace(getMessage(), "-ack%"));
-//		System.out.println("MESSAGE C ACK POST: " + getMessage() + "\n" + " - " + getSpecialID());
-//	}
-
 	private void displayMessage() {
 		m_GUI.displayMessage(getMessage());
-		System.out.println("message displayed - " + getMessage());
 	}
 
 	private void disconnectSocket() {
@@ -108,9 +92,7 @@ public class Client implements ActionListener {
 			setMessage(m_connection.receiveChatMessage());
 			// cleaning up incoming message
 			if (getMessage().contains("-ID%")) {
-				System.out.println("incomming: " + getMessage());
 				if (!getMessage().contains("-ack%") || getMessage().contains("-sack%")) {
-					System.out.println("To Message Trimmer: " + getMessage());
 					trim.messageTrimmer();
 					if (!messageDisplayNRMap.containsKey(getMessage() + getSpecialID())) {
 						messageDisplayNRMap.put(getMessage() + getSpecialID(), counter);
@@ -122,17 +104,11 @@ public class Client implements ActionListener {
 						messageDisplayNRMap.put(getMessage() + getSpecialID(), counter);
 					}
 				}
-
-				System.out.println("incomming specialID: " + getSpecialID());
-				System.out.println("incomming(altered): " + getMessage());
-				System.out.println(" - 1Does receiverKEY exist: " + receiverMap.containsKey(getSpecialID()));
-				System.out.println(" - 2 map VALUE: " + receiverMap.get(getSpecialID()));
 				// checks if message has already been encountered
 				if (!getMessage().contains("-ignore%")) {
 					if (!receiverMap.containsKey(getSpecialID())) {
 						// checks if it is an acknowledgement message
 						if (getMessage().contains("-ack%")) {
-							System.out.println("ACK RECEIVED BY CLIENT");
 							m_connection.setAck(true);
 							receiverMap.put(getSpecialID(), false);
 						}
@@ -141,7 +117,6 @@ public class Client implements ActionListener {
 						if (!getMessage().contains("-ack%")) {
 							receiverMap.put(getSpecialID(), true);
 						}
-						System.out.println(" - 3 Map VALUE: " + receiverMap.get(getSpecialID()));
 					}
 					// decide what to do with the message
 					if (receiverMap.containsKey(getSpecialID())) {
@@ -150,9 +125,6 @@ public class Client implements ActionListener {
 								&& messageDisplayNRMap.get(getMessage() + getSpecialID()) == 0) {
 							messageDisplayNRMap.put(getMessage() + getSpecialID(),
 									messageDisplayNRMap.get(getMessage() + getSpecialID()) + 1);
-							System.out.println(" -% " + getMessage());
-							System.out
-									.println(getSpecialID() + " = " + m_connection.getMessageMap().get(getSpecialID()));
 							// is message supposed to be displayed?
 							if (!(getMessage().contains("-Salive%") || getMessage().contains("-ack%"))
 									|| getMessage().contains("-socketDC%")) {
@@ -168,6 +140,8 @@ public class Client implements ActionListener {
 							}
 						}
 					}
+					// sets the key to false so that message will not
+					// be able to be displayed a second time.
 					receiverMap.put(getSpecialID(), true);
 				}
 			}
@@ -189,8 +163,6 @@ public class Client implements ActionListener {
 	protected String getMessage() {
 		return mess;
 	}
-	
-
 
 	// Sole ActionListener method; acts as a callback from GUI when user hits enter
 	// in input field

@@ -30,14 +30,14 @@ public class ServerConnection {
 	
 	static HashMap<String, Boolean> messageMap = new HashMap<String, Boolean>();
 	
-	public void setAck(boolean bool) {
+	protected void setAck(boolean bool) {
 		m_ack = bool;
 	}
 	protected boolean getAck()
 	{
 		return m_ack;
 	}
-	public ServerConnection(String hostName, int port, Client client) throws SocketException {
+	protected ServerConnection(String hostName, int port, Client client) throws SocketException {
 		m_serverPort = port;
 		this.client = client;
 		try {
@@ -48,19 +48,19 @@ public class ServerConnection {
 		m_socket = new DatagramSocket();
 	}
 
-	public void setHeartBeat(Boolean bool) {
+	protected void setHeartBeat(Boolean bool) {
 		heartBeat = bool;
 	}
 
-	public boolean getHeartBeat() {
+	protected boolean getHeartBeat() {
 		return heartBeat;
 	}
 
-	public HashMap<String,Boolean> getMessageMap() {
+	protected HashMap<String,Boolean> getMessageMap() {
 		return messageMap;
 	}
 
-	public boolean handshake(String name) throws IOException {
+	protected boolean handshake(String name) throws IOException {
 		sendChatMessage(name);
 		receiveChatMessage();
 		new HeartBeat(client).start();
@@ -68,7 +68,7 @@ public class ServerConnection {
 		return true;
 	}
 
-	public String receiveChatMessage() throws IOException {
+	protected String receiveChatMessage() throws IOException {
 		// Receiving message:
 		byte[] buf = new byte[1024];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -78,40 +78,26 @@ public class ServerConnection {
 		return message;
 	}
 
-	public int getPort() {
+	protected int getPort() {
 		return m_serverPort;
 	}
 
-	public InetAddress getAddress() {
+	protected InetAddress getAddress() {
 		return m_serverAddress;
 	}
 
-	public DatagramSocket getSocket() {
+	protected DatagramSocket getSocket() {
 		return m_socket;
 	}
 
-	public void sendChatMessage(String message) throws IOException {
+	protected void sendChatMessage(String message) throws IOException {
 		sendAtleastOnce(message);
-	}
-	
-	// retrieves the unique ID from the message
-	private String retrieveUniqueID(String message) {
-		String[] temp = message.split("-ID%");
-		temp[0] = temp[0].replace("-ack%", "");
-		temp[0] = temp[0].replace(client.getName() + "-name%", "");
-		return temp[0];
 	}
 
 	private void sendAtleastOnce(String message) {
 		// artificially produces loss of messages
 		Random generator = new Random();
-		String uniqueID = retrieveUniqueID(message);
-//		threadID.add(uniqueID);
-//		messageMap.put(uniqueID, false);
-		System.out.println("[client] uniqueID passed with message: " + uniqueID);
-		System.out.println("[client]  " + message);
 		Thread thread = new Thread() {
-			String threadMessageID = uniqueID;
 			// maxAttempts:
 			// log(10^6)/log(TRANSMISSION_FAILURE_RATE)
 			int sleepInMs = 110;
@@ -121,7 +107,6 @@ public class ServerConnection {
 			@Override
 			public void run() {
 				while (!getAck()) {
-					System.out.println("CLIENT CHECKS IF TRUE: " + getMessageMap().get(threadMessageID));
 					try {
 						attempt++;
 						double failure = generator.nextDouble();
@@ -144,13 +129,10 @@ public class ServerConnection {
 					}
 					// stops sending after maxAttempts ->
 					if (attempt == maxAttempts) {
-						System.out.println("max attempts was reached: " + attempt);
 						break;
 					}
 				}
 				setAck(false);
-				System.out.println("[clientEndSend]" + threadMessageID + " = " + messageMap.get(threadMessageID));
-				System.out.println("[client]sendAtleastOnce() - Thread ending");
 			}
 		};
 		thread.start();

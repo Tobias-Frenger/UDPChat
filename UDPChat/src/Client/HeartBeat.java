@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 
 /*
- * This is an implementation of the heartbeat
+ * This is an implementation of the heart-beat
  * algorithm which is used by every client in 
  * order to let the server know that the client
  * is alive
@@ -32,7 +32,6 @@ public class HeartBeat extends Thread {
 							client.getConnection().getPort()
 						);
 				client.getConnection().getSocket().send(packet);
-				System.out.println(client.getConnection().getHeartBeat());
 				sleep(sleepTimeInMs);
 			} catch (InterruptedException e) {
 				e.printStackTrace();

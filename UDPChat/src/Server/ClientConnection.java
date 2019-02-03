@@ -15,8 +15,8 @@ import java.util.Random;
  * @author brom
  */
 public class ClientConnection {
-
-	static double TRANSMISSION_FAILURE_RATE = 0.0;
+	// Artificial failure rate of 30% packet loss
+	static double TRANSMISSION_FAILURE_RATE = 0.3;
 
 	private final String m_name;
 	private final InetAddress m_address;
@@ -53,7 +53,6 @@ public class ClientConnection {
 
 			@Override
 			public void run() {
-//				String clientName = name;
 				int sleepInMs = 3000;
 
 				while (true) {
@@ -76,29 +75,15 @@ public class ClientConnection {
 		thread.start();
 	}
 
-	/*
-	 * TODO Implement 'at-least-once' solution
-	 */
 	protected void sendMessage(String message, DatagramSocket socket) throws IOException {
 		sendAtleastOnce(message, socket);
-		System.out.println("[SERVER] sendMessage() - " + message);
-		// artificially produces loss of messages
-//		Random generator = new Random();
-//		try {
-//			double failure = generator.nextDouble();
-//			if (failure > TRANSMISSION_FAILURE_RATE) {
-//				DatagramPacket packet = new DatagramPacket(message.getBytes(), message.getBytes().length, m_address,
-//						m_port);
-//				socket.send(packet);
-//			}
-//		} catch (IOException e1) {
-//			e1.printStackTrace();
-//		}
 	}
 
 	private void sendAtleastOnce(String message, DatagramSocket socket) {
 		Thread thread = new Thread() {
 			int sleepInMs = 110;
+			// maxAttempts:
+			// log(10^6)/log(TRANSMISSION_FAILURE_RATE)
 			int maxAttempts = 12;
 			int attempt = 0;  
 			String serverAck = "-sack%";
@@ -127,8 +112,6 @@ public class ClientConnection {
 					}
 				}
 				setAck(false);
-				System.out.println("[serverEndSend]");
-				System.out.println("[server]sendAtleastOnce() - Thread ending");
 			}
 		};
 		thread.start();
